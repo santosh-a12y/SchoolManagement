@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   CSS VARIABLES & DESIGN TOKENS
+   These provide consistent colors and measurements throughout the application.
+   ========================================================================== */
+:root {
+  --primary-navy: #0f172a;       /* Slate 900: Sidebar & header branding */
+  --primary-blue: #2563eb;       /* Blue 600: Primary action buttons */
+  --primary-blue-hover: #1d4ed8; /* Blue 700 */
+  --bg-app: #f8fafc;             /* Slate 50: Clean administrative background */
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;        /* Slate 200: Subtle card borders */
+  --text-main: #0f172a;          /* Slate 900: High-contrast body text */
+  --text-muted: #64748b;         /* Slate 500: Secondary text / labels */
+  --success: #16a34a;            /* Green 600: Paid, Passed, Active */
+  --warning: #d97706;            /* Amber 600: Pending, Partial */
+  --danger: #dc2626;             /* Red 600: Overdue, Failed, Inactive */
+}
+
+/* Base Body Styles */
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbars for data tables and sidebars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==========================================================================
+   PRINT STYLESHEET (@media print)
+   Critical for printing Marksheets, ID Cards, Admit Cards, and Receipts.
+   Hides navigation, sidebar, and action buttons.
+   Ensures accurate physical dimensions and prevents row breakages.
+   ========================================================================== */
+@media print {
+  /* Hide all dashboard chrome and navigation elements */
+  nav,
+  aside,
+  header,
+  .no-print,
+  .app-sidebar,
+  .app-header,
+  .page-actions,
+  button,
+  footer {
+    display: none !important;
+  }
+
+  /* Reset body and container backgrounds for printing */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Force background colors and gradients to print accurately in Chrome, Safari & Firefox */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+  }
+
+  /* Target print container */
+  .printable-document {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Prevent table rows and important blocks from splitting across pages */
+  tr, .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Standard A4 dimensions for general documents (Marksheet, Receipt, Admit Card) */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 12mm 10mm;
+  }
+}
+
+/* ID Card specific physical dimensions preview & print */
+.id-card-standard {
+  width: 336px;  /* standard CR-80 card ratio (85.6mm × 54mm) */
+  height: 212px;
+}
+
+.id-card-vertical {
+  width: 212px;  /* vertical portrait badge (54mm × 85.6mm) */
+  height: 336px;
+}
