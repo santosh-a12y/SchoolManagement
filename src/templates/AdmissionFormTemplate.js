@@ -8,8 +8,8 @@ import { User } from "lucide-react";
 /**
  * High-Fidelity Printable Admission Form Template
  */
-export default function AdmissionFormTemplate({ student }) {
-  const school = appConfig.school;
+export default function AdmissionFormTemplate({ student, school: customSchool }) {
+  const school = customSchool || appConfig.school;
 
   return (
     <div

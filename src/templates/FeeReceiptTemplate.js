@@ -19,8 +19,9 @@ export default function FeeReceiptTemplate({
   receivedBy = "Accounts Department",
   remarks = "",
   remainingBalance = 0,
+  school: customSchool,
 }) {
-  const school = appConfig.school;
+  const school = customSchool || appConfig.school;
 
   const renderSingleCopy = (copyTitle) => (
     <div className="border-2 border-slate-900 p-5 rounded-sm bg-white mb-6 print:mb-8 font-sans leading-tight">

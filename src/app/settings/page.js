@@ -56,6 +56,11 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success) {
         setSaveSuccess(true);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("school_settings_updated", { detail: data.data || schoolSettings })
+          );
+        }
         setTimeout(() => setSaveSuccess(false), 3000);
       }
     } catch (err) {

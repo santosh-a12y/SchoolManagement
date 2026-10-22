@@ -9,12 +9,14 @@ import Button from "@/components/ui/Button";
 import StudentIdCardTemplate from "@/templates/StudentIdCardTemplate";
 import studentService from "@/services/studentService";
 import documentService from "@/services/documentService";
+import useSchoolSettings from "@/hooks/useSchoolSettings";
 import { Printer, Download, CreditCard, Layout } from "lucide-react";
 
 function IdCardsContent() {
   const searchParams = useSearchParams();
   const initialAdmNo = searchParams.get("admissionNumber") || "";
   const initialFormat = searchParams.get("format") || "standard";
+  const { settings: school } = useSchoolSettings();
 
   const [students, setStudents] = useState([]);
   const [selectedAdmissionNo, setSelectedAdmissionNo] = useState(initialAdmNo);
@@ -134,6 +136,7 @@ function IdCardsContent() {
           <StudentIdCardTemplate
             student={selectedStudent}
             format={selectedFormat}
+            school={school}
           />
         ) : (
           <div className="text-slate-400 text-sm">Select a student above to preview the ID card.</div>

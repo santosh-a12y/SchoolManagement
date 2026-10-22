@@ -9,11 +9,13 @@ import Button from "@/components/ui/Button";
 import AdmissionFormTemplate from "@/templates/AdmissionFormTemplate";
 import studentService from "@/services/studentService";
 import documentService from "@/services/documentService";
+import useSchoolSettings from "@/hooks/useSchoolSettings";
 import { Printer, Download, FileText } from "lucide-react";
 
 function AdmissionFormContent() {
   const searchParams = useSearchParams();
   const initialAdmNo = searchParams.get("admissionNumber") || "";
+  const { settings: school } = useSchoolSettings();
 
   const [students, setStudents] = useState([]);
   const [selectedAdmissionNo, setSelectedAdmissionNo] = useState(initialAdmNo);
@@ -92,7 +94,7 @@ function AdmissionFormContent() {
 
       {student ? (
         <div className="py-4">
-          <AdmissionFormTemplate student={student} />
+          <AdmissionFormTemplate student={student} school={school} />
         </div>
       ) : (
         <div className="p-12 text-center bg-white rounded-xl border border-slate-200 text-slate-500 text-sm">

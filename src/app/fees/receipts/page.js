@@ -10,11 +10,13 @@ import FeeReceiptTemplate from "@/templates/FeeReceiptTemplate";
 import feeService from "@/services/feeService";
 import studentService from "@/services/studentService";
 import documentService from "@/services/documentService";
+import useSchoolSettings from "@/hooks/useSchoolSettings";
 import { Printer, Download, Receipt } from "lucide-react";
 
 function FeeReceiptsContent() {
   const searchParams = useSearchParams();
   const initialReceiptNo = searchParams.get("receiptNumber") || "";
+  const { settings: school } = useSchoolSettings();
 
   const [payments, setPayments] = useState([]);
   const [selectedReceiptNo, setSelectedReceiptNo] = useState(initialReceiptNo);
@@ -115,6 +117,7 @@ function FeeReceiptsContent() {
             receivedBy={currentPayment.receivedBy}
             remarks={currentPayment.remarks}
             remainingBalance={remainingBalance}
+            school={school}
           />
         </div>
       ) : (

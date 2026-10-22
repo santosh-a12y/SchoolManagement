@@ -13,8 +13,9 @@ export default function ProvisionalCertificateTemplate({
   conduct = "Exemplary",
   reason = "Higher Education & Relocation",
   issueDate = new Date().toISOString().split("T")[0],
+  school: customSchool,
 }) {
-  const school = appConfig.school;
+  const school = customSchool || appConfig.school;
 
   return (
     <div

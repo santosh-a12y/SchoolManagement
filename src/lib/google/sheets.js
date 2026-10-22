@@ -225,7 +225,11 @@ export async function getWorksheetData(sheetId, worksheetName) {
       headers.forEach((header, idx) => {
         if (!header) return;
         const cleanKey = String(header).trim();
-        obj[cleanKey] = row[idx] !== undefined ? row[idx] : "";
+        let val = row[idx] !== undefined ? row[idx] : "";
+        if (typeof val === "string" && val.startsWith("'") && (val.startsWith("'+") || val.startsWith("'="))) {
+          val = val.slice(1);
+        }
+        obj[cleanKey] = val;
       });
       return obj;
     })
@@ -234,6 +238,16 @@ export async function getWorksheetData(sheetId, worksheetName) {
   // Store in cache
   memoryCache.set(worksheetName, { data, timestamp: now });
   return data;
+}
+
+function formatCellForGoogleSheets(val) {
+  if (val === undefined || val === null) return "";
+  const str = String(val);
+  // Prevent Google Sheets formula parse error for phone numbers like +91...
+  if (str.startsWith("+") || str.startsWith("=")) {
+    return `'${str}`;
+  }
+  return str;
 }
 
 /**
@@ -248,8 +262,7 @@ export async function appendWorksheetRow(sheetId, worksheetName, rowObject) {
 
   const expectedHeaders = WORKSHEET_HEADERS[worksheetName] || Object.keys(rowObject);
   const rowValues = expectedHeaders.map((header) => {
-    const val = rowObject[header];
-    return val !== undefined && val !== null ? String(val) : "";
+    return formatCellForGoogleSheets(rowObject[header]);
   });
 
   // Check if header row exists
@@ -306,8 +319,7 @@ export async function setWorksheetData(sheetId, worksheetName, recordsArray) {
 
   recordsArray.forEach((item) => {
     const row = headers.map((h) => {
-      const val = item[h];
-      return val !== undefined && val !== null ? String(val) : "";
+      return formatCellForGoogleSheets(item[h]);
     });
     rows.push(row);
   });

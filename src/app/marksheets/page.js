@@ -12,12 +12,14 @@ import MarksheetTemplate from "@/templates/MarksheetTemplate";
 import studentService from "@/services/studentService";
 import examService from "@/services/examService";
 import documentService from "@/services/documentService";
+import useSchoolSettings from "@/hooks/useSchoolSettings";
 import { calculateGrade } from "@/lib/formatters";
 import { Printer, Download, Save, GraduationCap, Edit, AlertCircle, CheckCircle2 } from "lucide-react";
 
 function MarksheetsContent() {
   const searchParams = useSearchParams();
   const initialAdmNo = searchParams.get("admissionNumber") || "";
+  const { settings: school } = useSchoolSettings();
 
   const [students, setStudents] = useState([]);
   const [examinations, setExaminations] = useState([]);
@@ -373,6 +375,7 @@ function MarksheetsContent() {
             academicSession={activeSession}
             marks={marksRows}
             teacherRemarks={teacherRemarks}
+            school={school}
           />
         </div>
       )}

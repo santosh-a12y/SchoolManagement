@@ -551,12 +551,14 @@ export const storageService = {
     const isConfigured = isGoogleSheetsConfigured();
     const sheetId = process.env.GOOGLE_SHEET_ID || "";
     const db = await readLocalDatabase();
+    const schoolSettings = await this.getSettings();
 
     return {
       mode: isConfigured ? "google_sheets" : "demo_local",
       isConfigured,
       sheetId: isConfigured ? sheetId.slice(0, 8) + "..." : null,
-      activeSession: db.settings?.activeSession || appConfig.defaultSession,
+      activeSession: schoolSettings.activeSession || db.settings?.activeSession || appConfig.defaultSession,
+      school: schoolSettings,
       stats: {
         studentsCount: db.students.length,
         paymentsCount: db.feePayments.length,
@@ -654,6 +656,36 @@ export const storageService = {
   },
 
   async updateStudent(admissionNumber, updatedFields) {
+    if (isGoogleSheetsConfigured()) {
+      const liveStudents = await getWorksheetData(process.env.GOOGLE_SHEET_ID, "Students");
+      const idx = liveStudents.findIndex((s) => s.admissionNumber === admissionNumber);
+      if (idx === -1) {
+        throw new Error(`Student ${admissionNumber} not found.`);
+      }
+
+      const updated = {
+        ...liveStudents[idx],
+        ...updatedFields,
+        updatedAt: new Date().toISOString(),
+      };
+      liveStudents[idx] = updated;
+
+      // Only write live students back to Google Sheets — NEVER inject local mock students!
+      await setWorksheetData(process.env.GOOGLE_SHEET_ID, "Students", liveStudents);
+
+      // Mirror update to local DB if student exists locally
+      try {
+        const db = await readLocalDatabase();
+        const localIdx = db.students.findIndex((s) => s.admissionNumber === admissionNumber);
+        if (localIdx >= 0) {
+          db.students[localIdx] = updated;
+          await writeLocalDatabase(db);
+        }
+      } catch {}
+
+      return updated;
+    }
+
     const db = await readLocalDatabase();
     const idx = db.students.findIndex((s) => s.admissionNumber === admissionNumber);
     if (idx === -1) {
@@ -678,19 +710,35 @@ export const storageService = {
     });
 
     await writeLocalDatabase(db);
-
-    if (isGoogleSheetsConfigured()) {
-      try {
-        await setWorksheetData(process.env.GOOGLE_SHEET_ID, "Students", db.students);
-      } catch (err) {
-        console.error("Google Sheets update failed:", err.message);
-      }
-    }
-
     return updated;
   },
 
   async deleteStudent(admissionNumber) {
+    if (isGoogleSheetsConfigured()) {
+      const liveStudents = await getWorksheetData(process.env.GOOGLE_SHEET_ID, "Students");
+      const idx = liveStudents.findIndex((s) => s.admissionNumber === admissionNumber);
+      if (idx === -1) {
+        throw new Error(`Student ${admissionNumber} not found.`);
+      }
+
+      // Soft delete by setting status to Inactive
+      liveStudents[idx].status = "Inactive";
+      liveStudents[idx].updatedAt = new Date().toISOString();
+
+      await setWorksheetData(process.env.GOOGLE_SHEET_ID, "Students", liveStudents);
+
+      try {
+        const db = await readLocalDatabase();
+        const localIdx = db.students.findIndex((s) => s.admissionNumber === admissionNumber);
+        if (localIdx >= 0) {
+          db.students[localIdx].status = "Inactive";
+          await writeLocalDatabase(db);
+        }
+      } catch {}
+
+      return liveStudents[idx];
+    }
+
     const db = await readLocalDatabase();
     const idx = db.students.findIndex((s) => s.admissionNumber === admissionNumber);
     if (idx === -1) {
@@ -1114,22 +1162,65 @@ export const storageService = {
   },
 
   /**
-   * Settings
+   * Settings (School Name, Address, Contact, Affiliation)
+   * Synced directly with Google Sheets 'Settings' tab when connected
    */
   async getSettings() {
+    if (isGoogleSheetsConfigured()) {
+      try {
+        const rows = await getWorksheetData(process.env.GOOGLE_SHEET_ID, "Settings");
+        if (rows && rows.length > 0) {
+          const settingsObj = { ...appConfig.school };
+          rows.forEach((r) => {
+            if (r.key && r.value !== undefined) {
+              settingsObj[r.key] = r.value;
+            }
+          });
+          return settingsObj;
+        } else {
+          // Initialize Google Sheets Settings tab with current school defaults
+          const initialRows = Object.entries(appConfig.school).map(([key, value]) => ({
+            key,
+            value: String(value || ""),
+            updatedAt: new Date().toISOString(),
+          }));
+          await setWorksheetData(process.env.GOOGLE_SHEET_ID, "Settings", initialRows);
+          return appConfig.school;
+        }
+      } catch (err) {
+        console.warn("Could not read Settings from Google Sheets, using fallback:", err.message);
+      }
+    }
+
     const db = await readLocalDatabase();
     return db.settings || appConfig.school;
   },
 
   async updateSettings(newSettings) {
-    const db = await readLocalDatabase();
-    db.settings = {
-      ...db.settings,
+    const current = await this.getSettings();
+    const updated = {
+      ...current,
       ...newSettings,
       updatedAt: new Date().toISOString(),
     };
+
+    if (isGoogleSheetsConfigured()) {
+      try {
+        const rows = Object.entries(updated).map(([key, value]) => ({
+          key,
+          value: String(value || ""),
+          updatedAt: new Date().toISOString(),
+        }));
+        await setWorksheetData(process.env.GOOGLE_SHEET_ID, "Settings", rows);
+      } catch (err) {
+        console.error("Failed to save Settings to Google Sheets:", err.message);
+      }
+    }
+
+    const db = await readLocalDatabase();
+    db.settings = updated;
     await writeLocalDatabase(db);
-    return db.settings;
+    return updated;
   },
 };
 

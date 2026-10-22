@@ -60,7 +60,7 @@ export default function AppHeader({ onOpenSidebar }) {
 
         <div className="hidden sm:block">
           <span className="text-xs text-slate-600 font-semibold uppercase tracking-wider">
-            {appConfig.school.name}
+            {status?.school?.name || appConfig.school.name}
           </span>
           <div className="text-sm font-semibold text-slate-800">
             Administrative Management System

@@ -14,8 +14,9 @@ import { User, Phone, MapPin, QrCode } from "lucide-react";
 export default function StudentIdCardTemplate({
   student,
   format = "standard", // 'standard' | 'vertical'
+  school: customSchool,
 }) {
-  const school = appConfig.school;
+  const school = customSchool || appConfig.school;
 
   // Standard Horizontal CR-80 Layout (336px × 212px)
   if (format === "standard") {

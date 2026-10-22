@@ -15,8 +15,9 @@ export default function MarksheetTemplate({
   academicSession = "2026-27",
   marks = [],
   teacherRemarks = "",
+  school: customSchool,
 }) {
-  const school = appConfig.school;
+  const school = customSchool || appConfig.school;
 
   const totalMax = marks.reduce((sum, m) => sum + Number(m.maxMarks || 100), 0);
   const totalObtained = marks.reduce((sum, m) => sum + (m.isAbsent ? 0 : Number(m.marksObtained || 0)), 0);
@@ -211,7 +212,7 @@ export default function MarksheetTemplate({
             </span>
           </div>
           <div className="border-t border-slate-900 pt-1 font-bold">Exam Controller Signature</div>
-          <span className="text-[10px] text-slate-500">OXFORD Examination Board</span>
+          <span className="text-[10px] text-slate-500">{school.name} Examination Board</span>
         </div>
         <div>
           <div className="h-10"></div>

@@ -25,9 +25,11 @@ import {
   AlertCircle,
 } from "lucide-react";
 import appConfig from "@/config/appConfig";
+import useSchoolSettings from "@/hooks/useSchoolSettings";
 
 export default function AppSidebar({ isOpen, onClose }) {
   const pathname = usePathname();
+  const { settings } = useSchoolSettings();
   const [openSubmenus, setOpenSubmenus] = useState({
     students: true,
     academics: true,
@@ -123,11 +125,11 @@ export default function AppSidebar({ isOpen, onClose }) {
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 bg-slate-950/40">
           <Link href="/dashboard" className="flex items-center gap-3 group" onClick={onClose}>
             <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm tracking-wider shadow-sm group-hover:bg-blue-500 transition-colors">
-              {appConfig.school.logoText || "SMS"}
+              {settings.logoText || "OXFORD"}
             </div>
             <div>
               <h1 className="text-sm font-bold text-white tracking-tight leading-tight line-clamp-1">
-                {appConfig.school.name}
+                {settings.name || "OXFORD Academy of Excellence"}
               </h1>
               <p className="text-[11px] text-slate-400 font-medium">Admin Portal</p>
             </div>
@@ -176,8 +178,8 @@ export default function AppSidebar({ isOpen, onClose }) {
         {/* Footer Info: Current Session & School Code */}
         <div className="p-3.5 border-t border-slate-800 bg-slate-950/50 text-[11px] text-slate-400 flex items-center justify-between">
           <div>
-            <div className="text-white font-medium">Session: {appConfig.defaultSession}</div>
-            <div className="text-[10px] text-slate-400">Affiliation: {appConfig.school.schoolCode}</div>
+            <div className="text-white font-medium">Session: {settings.activeSession || appConfig.defaultSession}</div>
+            <div className="text-[10px] text-slate-400">Affiliation: {settings.affiliationNo || settings.schoolCode || appConfig.school.schoolCode}</div>
           </div>
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="System Online" />
         </div>

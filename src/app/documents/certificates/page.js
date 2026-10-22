@@ -11,11 +11,13 @@ import Button from "@/components/ui/Button";
 import ProvisionalCertificateTemplate from "@/templates/ProvisionalCertificateTemplate";
 import studentService from "@/services/studentService";
 import documentService from "@/services/documentService";
+import useSchoolSettings from "@/hooks/useSchoolSettings";
 import { Printer, Download, Award } from "lucide-react";
 
 function CertificatesContent() {
   const searchParams = useSearchParams();
   const initialAdmNo = searchParams.get("admissionNumber") || "";
+  const { settings: school } = useSchoolSettings();
 
   const [students, setStudents] = useState([]);
   const [selectedAdmissionNo, setSelectedAdmissionNo] = useState(initialAdmNo);
@@ -130,6 +132,7 @@ function CertificatesContent() {
         <div className="py-4">
           <ProvisionalCertificateTemplate
             student={student}
+            school={school}
             certificateType={certificateType}
             conduct={conduct}
             reason={reason}

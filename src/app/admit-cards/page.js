@@ -11,11 +11,13 @@ import AdmitCardTemplate from "@/templates/AdmitCardTemplate";
 import studentService from "@/services/studentService";
 import examService from "@/services/examService";
 import documentService from "@/services/documentService";
+import useSchoolSettings from "@/hooks/useSchoolSettings";
 import { Printer, Download } from "lucide-react";
 
 function AdmitCardsContent() {
   const searchParams = useSearchParams();
   const initialAdmNo = searchParams.get("admissionNumber") || "";
+  const { settings: school } = useSchoolSettings();
 
   const [students, setStudents] = useState([]);
   const [examinations, setExaminations] = useState([]);
@@ -118,6 +120,7 @@ function AdmitCardsContent() {
             examinationName={selectedExam}
             academicSession={selectedStudent.academicSession || "2026-27"}
             schedules={schedules}
+            school={school}
           />
         </div>
       ) : (

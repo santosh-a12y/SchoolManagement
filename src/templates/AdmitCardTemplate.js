@@ -14,8 +14,9 @@ export default function AdmitCardTemplate({
   examinationName = "Annual Exam",
   academicSession = "2026-27",
   schedules = [],
+  school: customSchool,
 }) {
-  const school = appConfig.school;
+  const school = customSchool || appConfig.school;
 
   return (
     <div
