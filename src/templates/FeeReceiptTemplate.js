@@ -27,14 +27,24 @@ export default function FeeReceiptTemplate({
     <div className="border-2 border-slate-900 p-5 rounded-sm bg-white mb-6 print:mb-8 font-sans leading-tight">
       {/* Receipt Top Header */}
       <div className="flex items-start justify-between border-b-2 border-slate-900 pb-3 mb-3">
-        <div>
-          <h1 className="text-lg font-black uppercase text-slate-950 tracking-tight">
-            {school.name}
-          </h1>
-          <p className="text-[10px] text-slate-600">{school.address}</p>
-          <p className="text-[10px] text-slate-600">
-            Phone: {school.phone} | Affiliation: {school.affiliationNo}
-          </p>
+        <div className="flex items-start gap-2.5">
+          {school.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={school.logoUrl}
+              alt="Logo"
+              className="w-10 h-10 object-contain rounded shrink-0 mt-0.5"
+            />
+          )}
+          <div>
+            <h1 className="text-lg font-black uppercase text-slate-950 tracking-tight">
+              {school.name}
+            </h1>
+            <p className="text-[10px] text-slate-600">{school.address}</p>
+            <p className="text-[10px] text-slate-600">
+              Phone: {school.phone} | Affiliation: {school.affiliationNo}
+            </p>
+          </div>
         </div>
         <div className="text-right">
           <span className="inline-block px-2 py-0.5 bg-slate-900 text-white font-bold text-[10px] uppercase tracking-wider rounded-xs print:bg-black">

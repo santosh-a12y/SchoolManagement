@@ -124,11 +124,20 @@ export default function AppSidebar({ isOpen, onClose }) {
         {/* Brand / Header */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 bg-slate-950/40">
           <Link href="/dashboard" className="flex items-center gap-3 group" onClick={onClose}>
-            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm tracking-wider shadow-sm group-hover:bg-blue-500 transition-colors">
-              {settings.logoText || "OXFORD"}
-            </div>
-            <div>
-              <h1 className="text-sm font-bold text-white tracking-tight leading-tight line-clamp-1">
+            {settings.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={settings.logoUrl}
+                alt={settings.name || "School Logo"}
+                className="w-9 h-9 rounded-lg object-contain bg-white p-0.5 shadow-sm border border-slate-700 shrink-0"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm tracking-wider shadow-sm group-hover:bg-blue-500 transition-colors shrink-0">
+                {settings.logoText || "OXFORD"}
+              </div>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold text-white tracking-tight leading-tight truncate">
                 {settings.name || "OXFORD Academy of Excellence"}
               </h1>
               <p className="text-[11px] text-slate-400 font-medium">Admin Portal</p>

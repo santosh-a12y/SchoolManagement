@@ -4,8 +4,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, Plus, Cloud, Database, UserCheck, ShieldCheck } from "lucide-react";
 import appConfig from "@/config/appConfig";
+import useSchoolSettings from "@/hooks/useSchoolSettings";
 
 export default function AppHeader({ onOpenSidebar }) {
+  const { settings } = useSchoolSettings();
   const [status, setStatus] = useState(() => {
     if (typeof window !== "undefined") {
       try {
@@ -59,9 +61,19 @@ export default function AppHeader({ onOpenSidebar }) {
         </button>
 
         <div className="hidden sm:block">
-          <span className="text-xs text-slate-600 font-semibold uppercase tracking-wider">
-            {status?.school?.name || appConfig.school.name}
-          </span>
+          <div className="flex items-center gap-2">
+            {settings.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={settings.logoUrl}
+                alt="Logo"
+                className="w-5 h-5 object-contain rounded shrink-0"
+              />
+            )}
+            <span className="text-xs text-slate-600 font-semibold uppercase tracking-wider truncate max-w-[280px]">
+              {settings.name || appConfig.school.name}
+            </span>
+          </div>
           <div className="text-sm font-semibold text-slate-800">
             Administrative Management System
           </div>

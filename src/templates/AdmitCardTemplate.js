@@ -25,6 +25,14 @@ export default function AdmitCardTemplate({
     >
       {/* School Header */}
       <div className="text-center border-b-2 border-slate-900 pb-3 mb-4">
+        {school.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={school.logoUrl}
+            alt="School Logo"
+            className="w-14 h-14 mx-auto mb-2 object-contain"
+          />
+        )}
         <h1 className="text-xl font-black uppercase text-slate-950 tracking-tight">
           {school.name}
         </h1>

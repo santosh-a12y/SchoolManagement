@@ -35,9 +35,18 @@ export default function ProvisionalCertificateTemplate({
 
       {/* School Crest / Header */}
       <div className="text-center mb-6">
-        <div className="w-12 h-12 rounded-full border-2 border-slate-900 mx-auto flex items-center justify-center font-black text-lg mb-2">
-          {school.logoText || "S"}
-        </div>
+        {school.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={school.logoUrl}
+            alt="School Crest"
+            className="w-14 h-14 mx-auto mb-2 object-contain"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-full border-2 border-slate-900 mx-auto flex items-center justify-center font-black text-lg mb-2">
+            {school.logoText || "S"}
+          </div>
+        )}
         <h1 className="text-2xl font-black uppercase tracking-tight text-slate-950 font-sans">
           {school.name}
         </h1>

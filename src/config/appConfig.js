@@ -8,7 +8,7 @@ export const appConfig = {
   appName: "Student Management System",
   version: "1.0.0",
   school: {
-    name: "Springfield Academy of Excellence",
+    name: "OXFORD Academy of Excellence",
     tagline: "Inspiring Young Minds, Shaping Future Leaders",
     affiliationNo: "CBSE/AFF/2026/89401",
     schoolCode: "SCH-98210",

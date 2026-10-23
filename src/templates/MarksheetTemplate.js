@@ -31,6 +31,14 @@ export default function MarksheetTemplate({
     >
       {/* School Header Banner */}
       <div className="text-center border-b-2 border-slate-900 pb-4 mb-4">
+        {school.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={school.logoUrl}
+            alt="School Logo"
+            className="w-16 h-16 mx-auto mb-2 object-contain"
+          />
+        )}
         <div className="inline-block px-3 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-widest rounded-sm mb-2 print:bg-black">
           Official Academic Progress Report
         </div>

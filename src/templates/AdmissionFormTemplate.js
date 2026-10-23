@@ -18,6 +18,14 @@ export default function AdmissionFormTemplate({ student, school: customSchool })
     >
       {/* Header */}
       <div className="text-center border-b-2 border-slate-900 pb-3 mb-4">
+        {school.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={school.logoUrl}
+            alt="School Logo"
+            className="w-14 h-14 mx-auto mb-2 object-contain"
+          />
+        )}
         <h1 className="text-xl font-black uppercase tracking-tight text-slate-950">
           {school.name}
         </h1>
