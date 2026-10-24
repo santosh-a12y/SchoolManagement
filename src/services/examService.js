@@ -67,6 +67,38 @@ export const examService = {
     if (!data.success) throw new Error(data.error || "Failed to save marks");
     return data.data;
   },
+
+  async checkExaminationDependencies(nameOrId) {
+    const res = await fetch(`/api/academics/examinations?type=dependencies&name=${encodeURIComponent(nameOrId)}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || "Failed to check examination dependencies");
+    return data.data;
+  },
+
+  async deleteExamination(nameOrId, cascade = false) {
+    const res = await fetch("/api/academics/examinations", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: nameOrId, cascade }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.error || "Failed to delete examination");
+      err.requiresConfirmation = data.requiresConfirmation;
+      err.dependencies = data.dependencies;
+      throw err;
+    }
+    return data.data;
+  },
+
+  async deleteScheduleItem(id) {
+    const res = await fetch(`/api/academics/examinations?type=schedule_item&id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || "Failed to delete schedule item");
+    return data.data;
+  },
 };
 
 export default examService;

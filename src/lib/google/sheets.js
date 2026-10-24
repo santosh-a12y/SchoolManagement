@@ -324,7 +324,7 @@ export async function setWorksheetData(sheetId, worksheetName, recordsArray) {
     rows.push(row);
   });
 
-  const range = `${worksheetName}!A1:ZZ${rows.length + 5}`;
+  const range = `${worksheetName}!A:ZZ`;
   await sheets.spreadsheets.values.clear({
     spreadsheetId: sheetId,
     range,

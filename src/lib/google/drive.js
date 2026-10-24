@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { getGoogleAuthClient } from "./auth";
+import { getGoogleAuthClient } from "./auth.js";
 import stream from "stream";
 
 /**
@@ -36,6 +36,7 @@ export async function uploadToDrive(buffer, filename, mimeType = "image/jpeg") {
     resource: fileMetadata,
     media,
     fields: "id, webViewLink, webContentLink, thumbnailLink",
+    supportsAllDrives: true,
   });
 
   // Make file publicly readable
@@ -46,10 +47,12 @@ export async function uploadToDrive(buffer, filename, mimeType = "image/jpeg") {
         role: "reader",
         type: "anyone",
       },
+      supportsAllDrives: true,
     });
   } catch (err) {
     console.warn("Could not set Drive file public permission:", err.message);
   }
 
-  return `https://drive.google.com/uc?id=${file.data.id}&export=view`;
+  // Google Direct Image CDN link works directly in <img> tags without cookies or auth redirects
+  return `https://lh3.googleusercontent.com/d/${file.data.id}`;
 }

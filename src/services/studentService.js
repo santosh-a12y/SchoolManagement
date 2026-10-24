@@ -1,3 +1,5 @@
+import { compressImage, fileToDataUrl } from "@/lib/imageCompression";
+
 /**
  * Client-side Student Service
  */
@@ -56,16 +58,40 @@ export const studentService = {
   },
 
   async uploadPhoto(file) {
-    const formData = new FormData();
-    formData.append("file", file);
+    if (!file) return "";
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || "Failed to upload photo");
-    return data.url;
+    let fileToUpload = file;
+    // Compress image to passport thumbnail (max 360x360 px, 0.78 quality, ~15-25KB)
+    if (typeof window !== "undefined" && file.type?.startsWith("image/")) {
+      try {
+        fileToUpload = await compressImage(file, 360, 360, 0.78);
+      } catch (e) {
+        console.warn("Client compression error, using raw file:", e);
+      }
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", fileToUpload);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to upload photo");
+      return data.url;
+    } catch (err) {
+      console.warn("Server upload failed, falling back to direct Data URI:", err.message);
+      // Safe fallback: convert to compressed Data URI directly on client
+      if (typeof window !== "undefined") {
+        try {
+          const fallbackDataUrl = await fileToDataUrl(fileToUpload);
+          if (fallbackDataUrl) return fallbackDataUrl;
+        } catch {}
+      }
+      throw err;
+    }
   },
 };
 

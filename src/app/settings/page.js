@@ -21,6 +21,7 @@ import {
   Trash2,
   Image as ImageIcon,
 } from "lucide-react";
+import { compressImage, fileToDataUrl } from "@/lib/imageCompression";
 
 export default function SettingsPage() {
   const [schoolSettings, setSchoolSettings] = useState(appConfig.school);
@@ -36,8 +37,17 @@ export default function SettingsPage() {
 
     setIsUploadingLogo(true);
     try {
+      let fileToUpload = file;
+      if (typeof window !== "undefined" && file.type?.startsWith("image/")) {
+        try {
+          fileToUpload = await compressImage(file, 400, 400, 0.85);
+        } catch (e) {
+          console.warn("Logo compression error, using raw file:", e);
+        }
+      }
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", fileToUpload);
       const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
@@ -51,6 +61,18 @@ export default function SettingsPage() {
         logoUrl: data.url,
       }));
     } catch (err) {
+      if (file) {
+        try {
+          const directDataUrl = await fileToDataUrl(file);
+          if (directDataUrl) {
+            setSchoolSettings((prev) => ({
+              ...prev,
+              logoUrl: directDataUrl,
+            }));
+            return;
+          }
+        } catch {}
+      }
       alert("Logo upload failed: " + err.message);
     } finally {
       setIsUploadingLogo(false);

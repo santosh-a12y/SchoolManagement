@@ -12,7 +12,7 @@ import Select from "@/components/ui/Select";
 import examService from "@/services/examService";
 import { formatDate } from "@/lib/formatters";
 import { SCHOOL_CLASSES, ACADEMIC_SESSIONS } from "@/lib/constants";
-import { Award, Calendar, Plus, Clock, MapPin } from "lucide-react";
+import { Award, Calendar, Plus, Clock, MapPin, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 
 export default function ExaminationsPage() {
   const [activeTab, setActiveTab] = useState("schedule"); // 'schedule' | 'exams'
@@ -25,6 +25,13 @@ export default function ExaminationsPage() {
   // Modals
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
+
+  // Delete modal state
+  const [deleteTargetExam, setDeleteTargetExam] = useState(null);
+  const [examDependencies, setExamDependencies] = useState(null);
+  const [isCheckingDeps, setIsCheckingDeps] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Form states
   const [newExamName, setNewExamName] = useState("");
@@ -46,6 +53,9 @@ export default function ExaminationsPage() {
     try {
       const exams = await examService.getExaminations();
       setExaminations(exams);
+      if (exams.length > 0 && !exams.some((e) => e.name === selectedExam)) {
+        setSelectedExam(exams[0].name);
+      }
       const sched = await examService.getSchedule(selectedExam, "", selectedClass);
       setSchedules(sched);
     } catch (err) {
@@ -73,6 +83,50 @@ export default function ExaminationsPage() {
       await loadData();
     } catch (err) {
       alert("Failed to create examination: " + err.message);
+    }
+  };
+
+  const handleInitiateDeleteExam = async (exam) => {
+    setDeleteTargetExam(exam);
+    setIsCheckingDeps(true);
+    setIsDeleteModalOpen(true);
+    setExamDependencies(null);
+    try {
+      const deps = await examService.checkExaminationDependencies(exam.name);
+      setExamDependencies(deps);
+    } catch (err) {
+      console.error("Failed to check dependencies:", err);
+      setExamDependencies({ hasDependencies: false, schedulesCount: 0, marksCount: 0 });
+    } finally {
+      setIsCheckingDeps(false);
+    }
+  };
+
+  const handleConfirmDeleteExam = async () => {
+    if (!deleteTargetExam) return;
+    setIsDeleting(true);
+    try {
+      await examService.deleteExamination(deleteTargetExam.name, examDependencies?.hasDependencies);
+      setIsDeleteModalOpen(false);
+      setDeleteTargetExam(null);
+      setExamDependencies(null);
+      await loadData();
+    } catch (err) {
+      alert("Failed to delete examination: " + err.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteScheduleItem = async (scheduleId, subjectName) => {
+    if (!window.confirm(`Are you sure you want to remove "${subjectName}" from the timetable schedule?`)) {
+      return;
+    }
+    try {
+      await examService.deleteScheduleItem(scheduleId);
+      await loadData();
+    } catch (err) {
+      alert("Failed to delete schedule item: " + err.message);
     }
   };
 
@@ -147,6 +201,21 @@ export default function ExaminationsPage() {
         <span className="font-semibold text-slate-800">
           {val} (Pass: {row.passMarks})
         </span>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      align: "right",
+      render: (_, row) => (
+        <button
+          type="button"
+          onClick={() => handleDeleteScheduleItem(row.id, row.subject)}
+          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+          title="Remove from timetable"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       ),
     },
   ];
@@ -241,11 +310,21 @@ export default function ExaminationsPage() {
           {examinations.map((exam) => (
             <div
               key={exam.id || exam.name}
-              className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-2"
+              className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3 relative group hover:border-slate-300 transition-all"
             >
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-sm text-slate-900">{exam.name}</span>
-                <Badge variant="blue">{exam.term}</Badge>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="font-bold text-sm text-slate-900 block">{exam.name}</span>
+                  <Badge variant="blue" className="mt-1">{exam.term}</Badge>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleInitiateDeleteExam(exam)}
+                  className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  title={`Delete ${exam.name}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
               <p className="text-xs text-slate-500">
                 Weightage in final evaluation: <strong>{exam.weightage}%</strong>
@@ -292,6 +371,74 @@ export default function ExaminationsPage() {
             onChange={(e) => setNewWeightage(e.target.value)}
           />
         </form>
+      </Modal>
+
+      {/* Delete Exam Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
+        title={examDependencies?.hasDependencies ? "Confirm Deletion — Active Related Records" : "Delete Examination Term"}
+        subtitle={deleteTargetExam ? `Examination: ${deleteTargetExam.name}` : ""}
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              isLoading={isDeleting}
+              disabled={isCheckingDeps}
+              onClick={handleConfirmDeleteExam}
+            >
+              {examDependencies?.hasDependencies ? "Yes, Delete Term & Associated Records" : "Delete Examination"}
+            </Button>
+          </>
+        }
+      >
+        {isCheckingDeps ? (
+          <div className="flex items-center justify-center py-6 text-slate-500 text-sm gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+            <span>Checking associated records in Google Sheet...</span>
+          </div>
+        ) : examDependencies?.hasDependencies ? (
+          <div className="space-y-4">
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-amber-800 text-sm">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+                <span>This Examination Term is currently in use!</span>
+              </div>
+              <p>
+                Deleting <strong>{deleteTargetExam?.name}</strong> will permanently remove this term and un-link/remove the following associated data:
+              </p>
+              <ul className="list-disc pl-5 space-y-1 font-semibold text-amber-950">
+                {examDependencies.schedulesCount > 0 && (
+                  <li>{examDependencies.schedulesCount} scheduled exam timetable item(s)</li>
+                )}
+                {examDependencies.marksCount > 0 && (
+                  <li>{examDependencies.marksCount} student mark entry / entries</li>
+                )}
+              </ul>
+            </div>
+            <p className="text-xs text-slate-600">
+              Are you sure you want to proceed? This change will be saved to your Google Sheet and cannot be undone.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-700">
+              Are you sure you want to delete examination term <strong>{deleteTargetExam?.name}</strong>?
+            </p>
+            <p className="text-xs text-slate-500">
+              This examination term has no linked timetable schedules or student marks. It will be safely removed from your Google Sheet.
+            </p>
+          </div>
+        )}
       </Modal>
 
       {/* Add Schedule Item Modal */}
