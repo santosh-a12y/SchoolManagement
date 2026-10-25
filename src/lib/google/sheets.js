@@ -87,6 +87,8 @@ export const WORKSHEET_HEADERS = {
     "className",
     "feeCategory",
     "amountPaid",
+    "discountAmount",
+    "discountReason",
     "paymentMode",
     "paymentDate",
     "transactionRef",

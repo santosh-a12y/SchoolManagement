@@ -12,6 +12,7 @@ import { StudentProfileSkeleton } from "@/components/ui/Skeleton";
 import StudentForm from "@/components/students/StudentForm";
 import studentService from "@/services/studentService";
 import { formatCurrency, formatDate, calculateGrade } from "@/lib/formatters";
+import { parseBoolean } from "@/lib/utils";
 import {
   User,
   CreditCard,
@@ -347,7 +348,7 @@ export default function StudentProfilePage({ params }) {
           ) : (
             Object.entries(examGroups).map(([examName, subjectList]) => {
               const totalMax = subjectList.reduce((sum, s) => sum + Number(s.maxMarks || 100), 0);
-              const totalObt = subjectList.reduce((sum, s) => sum + (s.isAbsent ? 0 : Number(s.marksObtained || 0)), 0);
+              const totalObt = subjectList.reduce((sum, s) => sum + (parseBoolean(s.isAbsent) ? 0 : Number(s.marksObtained || 0)), 0);
               const percentage = totalMax > 0 ? (totalObt / totalMax) * 100 : 0;
               const { grade, remark, isPassed } = calculateGrade(percentage);
 
@@ -385,26 +386,29 @@ export default function StudentProfilePage({ params }) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {subjectList.map((sub, sIdx) => (
-                        <tr key={sIdx} className="hover:bg-slate-50/50">
-                          <td className="px-4 py-2.5 font-medium text-slate-900">{sub.subject}</td>
-                          <td className="px-4 py-2.5 text-center font-mono">{sub.maxMarks}</td>
-                          <td className="px-4 py-2.5 text-center font-mono">{sub.passMarks}</td>
-                          <td className="px-4 py-2.5 text-center font-mono font-bold">
-                            {sub.isAbsent ? (
-                              <span className="text-amber-600">ABSENT</span>
-                            ) : (
-                              sub.marksObtained
-                            )}
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            <span className="font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
-                              {sub.grade}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-slate-500">{sub.remarks || "—"}</td>
-                        </tr>
-                      ))}
+                      {subjectList.map((sub, sIdx) => {
+                        const isAbsent = parseBoolean(sub.isAbsent);
+                        return (
+                          <tr key={sIdx} className="hover:bg-slate-50/50">
+                            <td className="px-4 py-2.5 font-medium text-slate-900">{sub.subject}</td>
+                            <td className="px-4 py-2.5 text-center font-mono">{sub.maxMarks}</td>
+                            <td className="px-4 py-2.5 text-center font-mono">{sub.passMarks}</td>
+                            <td className="px-4 py-2.5 text-center font-mono font-bold">
+                              {isAbsent ? (
+                                <span className="text-amber-600">ABSENT</span>
+                              ) : (
+                                sub.marksObtained
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <span className="font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
+                                {sub.grade}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5 text-slate-500">{sub.remarks || "—"}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

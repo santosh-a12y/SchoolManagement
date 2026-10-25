@@ -85,6 +85,8 @@ export const feePaymentSchema = z.object({
   amountPaid: z
     .number({ invalid_type_error: "Enter valid payment amount" })
     .positive("Amount must be greater than zero"),
+  discountAmount: z.number().min(0).optional().default(0),
+  discountReason: z.string().optional().default(""),
   paymentMode: z.enum(["Cash", "UPI", "Bank Transfer", "Cheque", "Demand Draft"]),
   paymentDate: z.string().min(10, "Payment date is required"),
   transactionRef: z.string().optional(),

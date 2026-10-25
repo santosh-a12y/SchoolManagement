@@ -18,6 +18,7 @@ export async function GET(request) {
 
     const totalApplicable = validSummaries.reduce((sum, s) => sum + (s.totalApplicable || 0), 0);
     const totalCollected = validSummaries.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
+    const totalDiscounts = validSummaries.reduce((sum, s) => sum + (s.totalDiscount || 0), 0);
     const totalPending = validSummaries.reduce((sum, s) => sum + (s.outstandingBalance || 0), 0);
 
     return NextResponse.json({
@@ -26,6 +27,7 @@ export async function GET(request) {
         totalStudents: validSummaries.length,
         totalApplicable,
         totalCollected,
+        totalDiscounts,
         totalPending,
       },
       data: validSummaries,

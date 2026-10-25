@@ -112,6 +112,8 @@ function FeeReceiptsContent() {
             student={student}
             feeCategory={currentPayment.feeCategory}
             amountPaid={currentPayment.amountPaid}
+            discountAmount={currentPayment.discountAmount || 0}
+            discountReason={currentPayment.discountReason || ""}
             paymentMode={currentPayment.paymentMode}
             transactionRef={currentPayment.transactionRef}
             receivedBy={currentPayment.receivedBy}

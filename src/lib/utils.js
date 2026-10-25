@@ -41,3 +41,20 @@ export function downloadBlob(blob, filename) {
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
+
+/**
+ * Safely parse boolean values coming from Google Sheets or form inputs.
+ * In JS, Boolean("FALSE") is truthy! This utility correctly handles "FALSE", "false", "0", etc.
+ * @param {any} val
+ * @returns {boolean}
+ */
+export function parseBoolean(val) {
+  if (val === true || val === 1) return true;
+  if (val === false || val === 0 || val === null || val === undefined) return false;
+  if (typeof val === "string") {
+    const s = val.trim().toLowerCase();
+    return s === "true" || s === "1" || s === "yes";
+  }
+  return false;
+}
+

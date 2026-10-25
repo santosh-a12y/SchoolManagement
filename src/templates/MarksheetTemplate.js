@@ -4,6 +4,7 @@ import React from "react";
 import appConfig from "@/config/appConfig";
 import { formatDate, calculateGrade, formatPercentage } from "@/lib/formatters";
 import { GRADING_SCALE, getNextSchoolClass } from "@/lib/constants";
+import { parseBoolean } from "@/lib/utils";
 
 /**
  * High-Fidelity Printable Marksheet Template
@@ -34,9 +35,10 @@ export default function MarksheetTemplate({
   const processedMarks = marks.map((m) => {
     const maxMarks = Number(m.maxMarks) || 100;
     const passMarks = Number(m.passMarks) || 33;
-    const marksObtained = m.isAbsent ? 0 : Number(m.marksObtained) || 0;
-    const isGrace = Boolean(m.isGrace || m.isGrace === "TRUE");
-    const graceMarks = isGrace ? Number(m.graceMarks) || 0 : 0;
+    const isAbsent = parseBoolean(m.isAbsent);
+    const marksObtained = isAbsent ? 0 : Number(m.marksObtained) || 0;
+    const graceMarks = Number(m.graceMarks) || 0;
+    const isGrace = parseBoolean(m.isGrace) || graceMarks > 0;
     const effectiveMarks = marksObtained + graceMarks;
 
     totalMax += maxMarks;
@@ -44,7 +46,7 @@ export default function MarksheetTemplate({
     totalRawObtained += marksObtained;
     totalGrace += graceMarks;
 
-    const isPassed = !m.isAbsent && effectiveMarks >= passMarks;
+    const isPassed = !isAbsent && effectiveMarks >= passMarks;
     if (!isPassed) hasFailedSubject = true;
     if (isGrace && graceMarks > 0) hasGraceApplied = true;
 
@@ -55,6 +57,7 @@ export default function MarksheetTemplate({
       marksObtained,
       graceMarks,
       isGrace,
+      isAbsent,
       effectiveMarks,
       isPassed,
     };

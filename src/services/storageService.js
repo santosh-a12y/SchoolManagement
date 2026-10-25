@@ -8,7 +8,7 @@ import {
   invalidateWorksheetCache,
 } from "../lib/google/sheets.js";
 import appConfig from "../config/appConfig.js";
-import { generateReceiptNumber } from "../lib/utils.js";
+import { generateReceiptNumber, parseBoolean } from "../lib/utils.js";
 import { calculateGrade } from "../lib/formatters.js";
 
 const DATA_FILE_PATH = path.join(process.cwd(), "data", "school_database.json");
@@ -1425,7 +1425,21 @@ export const storageService = {
   },
 
   _filterMarks(records, filters) {
-    let result = [...records];
+    let result = records.map((m) => {
+      const isAbsent = parseBoolean(m.isAbsent);
+      const graceMarks = Number(m.graceMarks) || 0;
+      const isGrace = parseBoolean(m.isGrace) || graceMarks > 0;
+      const marksObtained = isAbsent ? 0 : Number(m.marksObtained) || 0;
+      return {
+        ...m,
+        isAbsent,
+        isGrace,
+        graceMarks,
+        marksObtained,
+        maxMarks: Number(m.maxMarks) || 100,
+        passMarks: Number(m.passMarks) || 33,
+      };
+    });
     if (filters.admissionNumber) {
       result = result.filter((m) => m.admissionNumber === filters.admissionNumber);
     }
@@ -1447,9 +1461,10 @@ export const storageService = {
     const savedRecords = subjects.map((sub) => {
       const maxMarks = Number(sub.maxMarks) || 100;
       const passMarks = Number(sub.passMarks) || 33;
-      const marksObtained = sub.isAbsent ? 0 : Number(sub.marksObtained) || 0;
-      const isGrace = Boolean(sub.isGrace);
-      const graceMarks = isGrace ? Number(sub.graceMarks) || 0 : 0;
+      const isAbsent = parseBoolean(sub.isAbsent);
+      const marksObtained = isAbsent ? 0 : Number(sub.marksObtained) || 0;
+      const graceMarks = Number(sub.graceMarks) || 0;
+      const isGrace = parseBoolean(sub.isGrace) || graceMarks > 0;
       const effectiveMarks = marksObtained + graceMarks;
       const percentage = maxMarks > 0 ? (effectiveMarks / maxMarks) * 100 : 0;
       const { grade } = calculateGrade(percentage);
@@ -1467,8 +1482,8 @@ export const storageService = {
         marksObtained,
         graceMarks,
         isGrace: Boolean(isGrace),
-        isAbsent: Boolean(sub.isAbsent),
-        grade: sub.isAbsent ? "AB" : grade,
+        isAbsent: Boolean(isAbsent),
+        grade: isAbsent ? "AB" : grade,
         remarks: sub.remarks || (graceMarks > 0 ? `Passed with ${graceMarks} Grace Marks` : teacherRemarks || ""),
         recordedAt: new Date().toISOString(),
       };
@@ -1622,6 +1637,8 @@ export const storageService = {
     const count = db.feePayments.length + 1;
     const year = new Date().getFullYear();
     const receiptNumber = generateReceiptNumber(count, year);
+    const discountAmount = Number(paymentData.discountAmount) || 0;
+    const discountReason = paymentData.discountReason || "";
 
     const record = {
       receiptNumber,
@@ -1631,6 +1648,8 @@ export const storageService = {
       className: paymentData.className,
       feeCategory: paymentData.feeCategory,
       amountPaid: Number(paymentData.amountPaid) || 0,
+      discountAmount,
+      discountReason,
       paymentMode: paymentData.paymentMode,
       paymentDate: paymentData.paymentDate || new Date().toISOString().split("T")[0],
       transactionRef: paymentData.transactionRef || "",
@@ -1645,7 +1664,7 @@ export const storageService = {
       action: "FEE_PAYMENT",
       entity: "FeeReceipt",
       entityId: receiptNumber,
-      details: `Collected ${record.amountPaid} for ${record.studentName} (${record.feeCategory})`,
+      details: `Collected ${record.amountPaid}${discountAmount > 0 ? ` (with ${discountAmount} discount: ${discountReason})` : ""} for ${record.studentName} (${record.feeCategory})`,
       performedBy: record.receivedBy,
       timestamp: new Date().toISOString(),
     });
@@ -1665,7 +1684,7 @@ export const storageService = {
 
   /**
    * Pending Fee Calculation
-   * Pending = Total Fee Structure - Total Payments - Concessions
+   * Pending = Total Fee Structure - Total Payments - Concessions/Discounts
    */
   async getStudentFeeSummary(admissionNumber, session) {
     const student = await this.getStudentByAdmissionNumber(admissionNumber);
@@ -1677,13 +1696,17 @@ export const storageService = {
 
     const totalApplicable = structures.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
     const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amountPaid) || 0), 0);
-    const balance = Math.max(0, totalApplicable - totalPaid);
+    const totalDiscount = payments.reduce((sum, p) => sum + (Number(p.discountAmount) || 0), 0);
+    const totalCredited = totalPaid + totalDiscount;
+    const balance = Math.max(0, totalApplicable - totalCredited);
 
     return {
       student,
       academicSession: activeSession,
       totalApplicable,
       totalPaid,
+      totalDiscount,
+      totalCredited,
       outstandingBalance: balance,
       structures,
       payments,
@@ -1728,13 +1751,17 @@ export const storageService = {
 
       const totalApplicable = classStructures.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
       const totalPaid = studentPayments.reduce((sum, p) => sum + (Number(p.amountPaid) || 0), 0);
-      const balance = Math.max(0, totalApplicable - totalPaid);
+      const totalDiscount = studentPayments.reduce((sum, p) => sum + (Number(p.discountAmount) || 0), 0);
+      const totalCredited = totalPaid + totalDiscount;
+      const balance = Math.max(0, totalApplicable - totalCredited);
 
       return {
         student,
         academicSession: activeSession,
         totalApplicable,
         totalPaid,
+        totalDiscount,
+        totalCredited,
         outstandingBalance: balance,
         structures: classStructures,
         payments: studentPayments,

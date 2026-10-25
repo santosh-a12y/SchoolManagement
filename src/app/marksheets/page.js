@@ -15,6 +15,7 @@ import documentService from "@/services/documentService";
 import useSchoolSettings from "@/hooks/useSchoolSettings";
 import { calculateGrade } from "@/lib/formatters";
 import { getNextSchoolClass } from "@/lib/constants";
+import { parseBoolean } from "@/lib/utils";
 import { Printer, Download, Save, GraduationCap, Edit, AlertCircle, CheckCircle2, Award } from "lucide-react";
 
 function MarksheetsContent() {
@@ -66,9 +67,10 @@ function MarksheetsContent() {
             examMarks.map((m) => {
               const maxMarks = Number(m.maxMarks) || 100;
               const passMarks = Number(m.passMarks) || 33;
-              const marksObtained = Number(m.marksObtained) || 0;
+              const isAbsent = parseBoolean(m.isAbsent);
+              const marksObtained = isAbsent ? 0 : Number(m.marksObtained) || 0;
               const graceMarks = Number(m.graceMarks) || 0;
-              const isGrace = Boolean(m.isGrace === "TRUE" || m.isGrace === true || graceMarks > 0);
+              const isGrace = parseBoolean(m.isGrace) || graceMarks > 0;
               return {
                 subject: m.subject,
                 maxMarks,
@@ -76,8 +78,8 @@ function MarksheetsContent() {
                 marksObtained,
                 graceMarks,
                 isGrace,
-                isAbsent: Boolean(m.isAbsent),
-                grade: m.grade || "A1",
+                isAbsent,
+                grade: isAbsent ? "AB" : m.grade || "A1",
                 remarks: m.remarks || "",
               };
             })
@@ -148,7 +150,7 @@ function MarksheetsContent() {
 
     // Recalculate effective grade
     const max = Number(updated[idx].maxMarks) || 100;
-    const isAbsent = Boolean(updated[idx].isAbsent);
+    const isAbsent = parseBoolean(updated[idx].isAbsent);
     const obt = isAbsent ? 0 : Number(updated[idx].marksObtained) || 0;
     const grace = updated[idx].isGrace ? Number(updated[idx].graceMarks) || 0 : 0;
     const effective = obt + grace;
@@ -174,10 +176,10 @@ function MarksheetsContent() {
           subject: r.subject,
           maxMarks: Number(r.maxMarks) || 100,
           passMarks: Number(r.passMarks) || 33,
-          marksObtained: r.isAbsent ? 0 : Number(r.marksObtained) || 0,
+          marksObtained: parseBoolean(r.isAbsent) ? 0 : Number(r.marksObtained) || 0,
           graceMarks: r.isGrace ? Number(r.graceMarks) || 0 : 0,
-          isGrace: Boolean(r.isGrace),
-          isAbsent: Boolean(r.isAbsent),
+          isGrace: parseBoolean(r.isGrace),
+          isAbsent: parseBoolean(r.isAbsent),
           grade: r.grade,
           remarks: r.remarks,
         })),
@@ -301,12 +303,13 @@ function MarksheetsContent() {
 
         const evaluatedRows = marksRows.map((r) => {
           const pass = Number(r.passMarks) || 33;
-          const obt = r.isAbsent ? 0 : Number(r.marksObtained) || 0;
-          const isGrace = Boolean(r.isGrace);
+          const isAbsent = parseBoolean(r.isAbsent);
+          const obt = isAbsent ? 0 : Number(r.marksObtained) || 0;
+          const isGrace = parseBoolean(r.isGrace);
           const grace = isGrace ? Number(r.graceMarks) || 0 : 0;
           const effective = obt + grace;
-          const isBelowPass = !r.isAbsent && obt < pass;
-          const isPassed = !r.isAbsent && effective >= pass;
+          const isBelowPass = !isAbsent && obt < pass;
+          const isPassed = !isAbsent && effective >= pass;
           const isGracePassed = isBelowPass && isPassed && grace > 0;
           return {
             ...r,
@@ -314,6 +317,7 @@ function MarksheetsContent() {
             obt,
             grace,
             isGrace,
+            isAbsent,
             effective,
             isBelowPass,
             isPassed,
@@ -446,12 +450,13 @@ function MarksheetsContent() {
                 <tbody className="divide-y divide-slate-100 text-slate-800">
                   {marksRows.map((row, idx) => {
                     const pass = Number(row.passMarks) || 33;
-                    const obt = row.isAbsent ? 0 : Number(row.marksObtained) || 0;
-                    const isGrace = Boolean(row.isGrace);
+                    const isAbsent = parseBoolean(row.isAbsent);
+                    const obt = isAbsent ? 0 : Number(row.marksObtained) || 0;
+                    const isGrace = parseBoolean(row.isGrace);
                     const grace = isGrace ? Number(row.graceMarks) || 0 : 0;
                     const effective = obt + grace;
-                    const isBelowPass = !row.isAbsent && obt < pass;
-                    const isPassed = !row.isAbsent && effective >= pass;
+                    const isBelowPass = !isAbsent && obt < pass;
+                    const isPassed = !isAbsent && effective >= pass;
                     const isGracePassed = isBelowPass && isPassed && grace > 0;
 
                     return (

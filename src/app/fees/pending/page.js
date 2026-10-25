@@ -39,6 +39,7 @@ export default function PendingFeesPage() {
     totalStudents: 0,
     totalApplicable: 0,
     totalCollected: 0,
+    totalDiscounts: 0,
     totalPending: 0,
   };
 
@@ -51,6 +52,7 @@ export default function PendingFeesPage() {
     parentContact: item.student.parentContact,
     totalApplicable: item.totalApplicable,
     totalPaid: item.totalPaid,
+    totalDiscount: item.totalDiscount || 0,
     outstandingBalance: item.outstandingBalance,
     isFullyPaid: item.isFullyPaid,
   }));
@@ -100,6 +102,19 @@ export default function PendingFeesPage() {
       render: (val) => (
         <span className="font-mono font-semibold text-emerald-700">{formatCurrency(val)}</span>
       ),
+    },
+    {
+      key: "totalDiscount",
+      label: "Discounts Given",
+      sortable: true,
+      render: (val) =>
+        Number(val) > 0 ? (
+          <span className="inline-block font-mono font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-xs border border-amber-200">
+            - {formatCurrency(val)}
+          </span>
+        ) : (
+          <span className="text-slate-400 text-xs">—</span>
+        ),
     },
     {
       key: "outstandingBalance",
@@ -155,7 +170,7 @@ export default function PendingFeesPage() {
       />
 
       {/* Summary Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Total Students
@@ -178,7 +193,7 @@ export default function PendingFeesPage() {
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
           <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-            Total Fee Collected
+            Total Collected
           </span>
           <div className="text-2xl font-bold text-emerald-700 mt-1 font-mono">
             {formatCurrency(summary.totalCollected)}
@@ -187,10 +202,20 @@ export default function PendingFeesPage() {
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">
-            Total Pending Balance
+          <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
+            Total Discounts
           </span>
-          <div className="text-2xl font-bold text-amber-700 mt-1 font-mono">
+          <div className="text-2xl font-bold text-amber-800 mt-1 font-mono">
+            {formatCurrency(summary.totalDiscounts || 0)}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">Early-bird & full-pay incentives</p>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-xs font-semibold text-rose-600 uppercase tracking-wider">
+            Pending Balance
+          </span>
+          <div className="text-2xl font-bold text-rose-700 mt-1 font-mono">
             {formatCurrency(summary.totalPending)}
           </div>
           <p className="text-[11px] text-slate-400 mt-1">Outstanding unpaid tuition</p>

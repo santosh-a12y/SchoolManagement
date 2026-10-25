@@ -192,3 +192,93 @@ test("getNextSchoolClass progression and grace marks evaluation", async () => {
   // 28 + 5 = 33% -> Grade D (Passed)
   assert.equal(mathRecord.grade, "D");
 });
+
+test("Fee payment: Early-bird full payment discount settles account balance", async () => {
+  const feeStudentAdmNo = `DISC-ADM-${Date.now()}`;
+  await storageService.createStudent({
+    admissionNumber: feeStudentAdmNo,
+    studentName: "Discount Test Pupil",
+    dateOfBirth: "2015-06-15",
+    gender: "Male",
+    residentialAddress: "Surat, Gujarat",
+    academicSession: "2026-27",
+    className: "Class 5",
+    section: "A",
+    rollNumber: "45",
+    admissionDate: "2026-04-01",
+    status: "Active",
+    fatherName: "Father Discount",
+    motherName: "Mother Discount",
+    parentContact: "+91 98888 11111",
+  });
+
+  // Check applicable fee
+  const summaryBefore = await storageService.getStudentFeeSummary(feeStudentAdmNo, "2026-27");
+  const applicableFee = summaryBefore.totalApplicable;
+  assert.ok(applicableFee > 0, "Student has applicable fee structures");
+
+  // School offers 10% Early Bird Discount for paying upfront
+  const discountRate = 0.10;
+  const discountAmount = Math.round(applicableFee * discountRate);
+  const netAmountPaid = applicableFee - discountAmount;
+
+  const paymentRecord = await storageService.recordFeePayment({
+    admissionNumber: feeStudentAdmNo,
+    studentName: "Discount Test Pupil",
+    academicSession: "2026-27",
+    className: "Class 5",
+    feeCategory: "Tuition Fee",
+    amountPaid: netAmountPaid,
+    discountAmount: discountAmount,
+    discountReason: "Early Bird Annual Full Payment (10% Discount)",
+    paymentMode: "Bank Transfer",
+    receivedBy: "Accounts Dept",
+    remarks: "Full annual tuition with 10% upfront discount",
+  });
+
+  assert.equal(paymentRecord.amountPaid, netAmountPaid);
+  assert.equal(paymentRecord.discountAmount, discountAmount);
+  assert.equal(paymentRecord.discountReason, "Early Bird Annual Full Payment (10% Discount)");
+
+  // Check updated student fee summary
+  const summaryAfter = await storageService.getStudentFeeSummary(feeStudentAdmNo, "2026-27");
+  assert.equal(summaryAfter.totalPaid, netAmountPaid);
+  assert.equal(summaryAfter.totalDiscount, discountAmount);
+  assert.equal(summaryAfter.totalCredited, applicableFee);
+  assert.equal(summaryAfter.outstandingBalance, 0);
+  assert.equal(summaryAfter.isFullyPaid, true);
+});
+
+test("parseBoolean correctly parses Google Sheets boolean strings ('FALSE', 'TRUE')", async () => {
+  const { parseBoolean } = await import("../src/lib/utils.js");
+
+  // Crucial test: in standard JS, Boolean("FALSE") is TRUE, which caused absent marks bug!
+  assert.equal(parseBoolean("FALSE"), false);
+  assert.equal(parseBoolean("false"), false);
+  assert.equal(parseBoolean("0"), false);
+  assert.equal(parseBoolean(false), false);
+  assert.equal(parseBoolean(""), false);
+  assert.equal(parseBoolean(null), false);
+  assert.equal(parseBoolean(undefined), false);
+
+  assert.equal(parseBoolean("TRUE"), true);
+  assert.equal(parseBoolean("true"), true);
+  assert.equal(parseBoolean("1"), true);
+  assert.equal(parseBoolean("yes"), true);
+  assert.equal(parseBoolean(true), true);
+
+  // Storage filtering preserves numbers and sets isAbsent to false for "FALSE"
+  const rawMarks = [
+    { subject: "English", marksObtained: "85", isAbsent: "FALSE", maxMarks: "100" },
+    { subject: "Mathematics", marksObtained: "0", isAbsent: "TRUE", maxMarks: "100" },
+  ];
+
+  const filtered = storageService._filterMarks(rawMarks, {});
+  assert.equal(filtered[0].isAbsent, false);
+  assert.equal(filtered[0].marksObtained, 85);
+
+  assert.equal(filtered[1].isAbsent, true);
+  assert.equal(filtered[1].marksObtained, 0);
+});
+
+

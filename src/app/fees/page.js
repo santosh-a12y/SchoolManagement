@@ -13,7 +13,7 @@ import Select from "@/components/ui/Select";
 import feeService from "@/services/feeService";
 import { formatCurrency } from "@/lib/formatters";
 import { SCHOOL_CLASSES, ACADEMIC_SESSIONS, FEE_CATEGORIES } from "@/lib/constants";
-import { BadgeDollarSign, Plus, Receipt, AlertCircle } from "lucide-react";
+import { BadgeDollarSign, Plus, Receipt, AlertCircle, Sparkles } from "lucide-react";
 
 export default function FeesOverviewPage() {
   const [structures, setStructures] = useState([]);
@@ -163,6 +163,31 @@ export default function FeesOverviewPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Annual Pre-Payment Discount Incentive Policy Banner */}
+      <div className="mb-6 p-4 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50/70 via-blue-50/70 to-slate-50 text-indigo-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-indigo-600 text-white shrink-0 mt-0.5">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+              <span>Annual Full Pre-Payment Discount Policy</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200 uppercase">
+                Early Working Capital
+              </span>
+            </h4>
+            <p className="text-xs text-slate-600 mt-0.5 max-w-3xl">
+              Parents paying the 100% full annual tuition fee upfront at the beginning of the financial year can receive an <strong>Early-Bird Concession (5% to 10%)</strong> when recording payment. This boosts early school liquidity for lab setups, learning resources, and infrastructure development.
+            </p>
+          </div>
+        </div>
+        <Link href="/fees/payments">
+          <Button variant="outline" size="sm" icon={Receipt}>
+            Record Payment with Discount
+          </Button>
+        </Link>
       </div>
 
       <DataTable

@@ -14,6 +14,8 @@ export default function FeeReceiptTemplate({
   student,
   feeCategory = "Tuition Fee",
   amountPaid = 12000,
+  discountAmount = 0,
+  discountReason = "",
   paymentMode = "UPI",
   transactionRef = "UPI-REF-99218",
   receivedBy = "Accounts Department",
@@ -22,6 +24,8 @@ export default function FeeReceiptTemplate({
   school: customSchool,
 }) {
   const school = customSchool || appConfig.school;
+  const numDiscount = Number(discountAmount) || 0;
+  const grossAmount = (Number(amountPaid) || 0) + numDiscount;
 
   const renderSingleCopy = (copyTitle) => (
     <div className="border-2 border-slate-900 p-5 rounded-sm bg-white mb-6 print:mb-8 font-sans leading-tight">
@@ -111,19 +115,50 @@ export default function FeeReceiptTemplate({
               {paymentMode}
             </td>
             <td className="border border-slate-900 px-3 py-2 text-right font-mono font-bold text-sm text-slate-950">
-              {formatCurrency(amountPaid)}
+              {formatCurrency(numDiscount > 0 ? grossAmount : amountPaid)}
             </td>
           </tr>
+
+          {numDiscount > 0 && (
+            <tr className="border-b border-slate-800 bg-amber-50/60 print:bg-transparent">
+              <td className="border border-slate-900 px-3 py-2 text-center font-mono">2</td>
+              <td className="border border-slate-900 px-3 py-2">
+                <span className="font-bold text-amber-900 print:text-black">
+                  Fee Concession / Discount
+                </span>
+                <span className="block text-[10px] text-amber-800 print:text-black italic">
+                  {discountReason || "Early Full Payment / Annual Lump-Sum Discount"}
+                </span>
+              </td>
+              <td className="border border-slate-900 px-3 py-2 text-center font-medium text-slate-600">
+                Discount
+              </td>
+              <td className="border border-slate-900 px-3 py-2 text-right font-mono font-bold text-sm text-amber-800 print:text-black">
+                - {formatCurrency(numDiscount)}
+              </td>
+            </tr>
+          )}
 
           {/* Grand Total Row */}
           <tr className="bg-slate-50 print:bg-slate-100 font-bold border-t-2 border-slate-900">
             <td colSpan={3} className="border border-slate-900 px-3 py-2 text-right uppercase text-[11px]">
-              Total Amount Received:
+              Net Amount Received:
             </td>
             <td className="border border-slate-900 px-3 py-2 text-right font-mono text-base font-extrabold text-emerald-800 print:text-black">
               {formatCurrency(amountPaid)}
             </td>
           </tr>
+
+          {numDiscount > 0 && (
+            <tr className="bg-emerald-50/60 print:bg-transparent font-medium border-t border-slate-300 text-[11px]">
+              <td colSpan={3} className="border border-slate-900 px-3 py-1.5 text-right font-semibold text-slate-700">
+                Total Fee Credit Applied to Account (Paid + Discount):
+              </td>
+              <td className="border border-slate-900 px-3 py-1.5 text-right font-mono font-bold text-slate-900">
+                {formatCurrency(grossAmount)}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 
