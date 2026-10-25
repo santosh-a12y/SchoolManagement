@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
@@ -10,7 +10,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { useStudents } from "@/hooks/useStudents";
 import { SCHOOL_CLASSES, SECTIONS, ACADEMIC_SESSIONS, STUDENT_STATUSES } from "@/lib/constants";
-import { UserPlus, Upload, Download, Eye, Edit, CreditCard, Receipt, User } from "lucide-react";
+import { UserPlus, Upload, Download, Eye, Edit, CreditCard, Receipt, User, RotateCcw } from "lucide-react";
 
 export default function StudentsPage() {
   const router = useRouter();
@@ -19,12 +19,33 @@ export default function StudentsPage() {
   const [selectedSection, setSelectedSection] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
-  const { students, isLoading, refetch } = useStudents({
-    session: selectedSession,
-    className: selectedClass,
-    section: selectedSection,
-    status: selectedStatus,
-  });
+  const { students, isLoading, refetch } = useStudents();
+
+  // Instant in-memory filtering for dropdown filters (Session, Class, Section, Status)
+  const filteredStudents = useMemo(() => {
+    if (!students || !Array.isArray(students)) return [];
+    return students.filter((s) => {
+      if (selectedSession && String(s.academicSession || "").trim() !== selectedSession.trim()) {
+        return false;
+      }
+      if (selectedClass && String(s.className || "").trim() !== selectedClass.trim()) {
+        return false;
+      }
+      if (
+        selectedSection &&
+        String(s.section || "").trim().toUpperCase() !== selectedSection.trim().toUpperCase()
+      ) {
+        return false;
+      }
+      if (
+        selectedStatus &&
+        String(s.status || "").trim().toLowerCase() !== selectedStatus.trim().toLowerCase()
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [students, selectedSession, selectedClass, selectedSection, selectedStatus]);
 
   const columns = [
     {
@@ -133,12 +154,23 @@ export default function StudentsPage() {
     },
   ];
 
+  const hasActiveFilters = Boolean(
+    selectedSession || selectedClass || selectedSection || selectedStatus
+  );
+
+  const clearFilters = () => {
+    setSelectedSession("");
+    setSelectedClass("");
+    setSelectedSection("");
+    setSelectedStatus("");
+  };
+
   const filterComponents = (
-    <>
+    <div className="flex flex-wrap items-center gap-2">
       <select
         value={selectedSession}
         onChange={(e) => setSelectedSession(e.target.value)}
-        className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 cursor-pointer"
+        className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
         <option value="">All Sessions</option>
         {ACADEMIC_SESSIONS.map((s) => (
@@ -151,7 +183,7 @@ export default function StudentsPage() {
       <select
         value={selectedClass}
         onChange={(e) => setSelectedClass(e.target.value)}
-        className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 cursor-pointer"
+        className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
         <option value="">All Classes</option>
         {SCHOOL_CLASSES.map((cls) => (
@@ -164,7 +196,7 @@ export default function StudentsPage() {
       <select
         value={selectedSection}
         onChange={(e) => setSelectedSection(e.target.value)}
-        className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 cursor-pointer"
+        className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
         <option value="">All Sections</option>
         {SECTIONS.map((sec) => (
@@ -177,7 +209,7 @@ export default function StudentsPage() {
       <select
         value={selectedStatus}
         onChange={(e) => setSelectedStatus(e.target.value)}
-        className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 cursor-pointer"
+        className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
         <option value="">All Statuses</option>
         {STUDENT_STATUSES.map((st) => (
@@ -186,7 +218,18 @@ export default function StudentsPage() {
           </option>
         ))}
       </select>
-    </>
+
+      {hasActiveFilters && (
+        <button
+          onClick={clearFilters}
+          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
+          title="Reset all filters"
+        >
+          <RotateCcw className="w-3 h-3" />
+          <span>Reset</span>
+        </button>
+      )}
+    </div>
   );
 
   return (
@@ -218,12 +261,18 @@ export default function StudentsPage() {
 
       <DataTable
         columns={columns}
-        data={students}
+        data={filteredStudents}
         isLoading={isLoading}
         initialPageSize={10}
         pageSizeOptions={[10, 25, 50, 100]}
         searchPlaceholder="Search by admission no, name, phone, roll..."
         filterComponents={filterComponents}
+        emptyTitle="No students found"
+        emptyDescription={
+          hasActiveFilters
+            ? "No students match your selected filters. Try adjusting or resetting your filters."
+            : "No students registered in the directory yet."
+        }
         onRowClick={(row) => router.push(`/students/${row.admissionNumber}`)}
       />
     </AppLayout>

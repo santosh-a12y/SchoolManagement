@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from "lucide-react";
 import EmptyState from "./EmptyState";
 
@@ -32,6 +32,11 @@ export default function DataTable({
   const [sortDir, setSortDir] = useState(initialSortDir);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
+
+  // Reset pagination to page 1 whenever source data length changes
+  useEffect(() => {
+    setPage(1);
+  }, [data.length]);
 
   // Search filter
   const filteredData = useMemo(() => {

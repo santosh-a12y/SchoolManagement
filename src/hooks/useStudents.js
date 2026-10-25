@@ -9,6 +9,11 @@ export function useStudents(initialFilters = {}) {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(initialFilters);
 
+  const initialFiltersKey = JSON.stringify(initialFilters);
+  useEffect(() => {
+    setFilters(initialFilters);
+  }, [initialFiltersKey]);
+
   const fetchStudents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
