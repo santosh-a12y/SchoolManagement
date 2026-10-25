@@ -63,6 +63,8 @@ export const WORKSHEET_HEADERS = {
     "maxMarks",
     "passMarks",
     "marksObtained",
+    "graceMarks",
+    "isGrace",
     "isAbsent",
     "grade",
     "remarks",

@@ -120,3 +120,75 @@ test("Storage service: Student registration, duplicate prevention, marks, and fe
   const updatedFeeSummary = await storageService.getStudentFeeSummary(testAdmNo, "2026-27");
   assert.equal(updatedFeeSummary.outstandingBalance, initialBalance - 5000);
 });
+
+test("getNextSchoolClass progression and grace marks evaluation", async () => {
+  const { getNextSchoolClass } = await import("../src/lib/constants.js");
+
+  // Progression checks
+  assert.equal(getNextSchoolClass("Nursery"), "LKG");
+  assert.equal(getNextSchoolClass("LKG"), "UKG");
+  assert.equal(getNextSchoolClass("UKG"), "Class 1");
+  assert.equal(getNextSchoolClass("Class 5"), "Class 6");
+  assert.equal(getNextSchoolClass("Class 9"), "Class 10");
+  assert.equal(getNextSchoolClass("Class 10"), "Class 11");
+  assert.equal(getNextSchoolClass("Class 11"), "Class 12");
+  assert.equal(getNextSchoolClass("Class 12"), "Graduated (Course Complete)");
+  assert.equal(getNextSchoolClass("Unknown Class"), null);
+
+  // Storage verification with Grace Marks
+  const graceTestAdmNo = `GRACE-ADM-${Date.now()}`;
+  await storageService.createStudent({
+    admissionNumber: graceTestAdmNo,
+    studentName: "Grace Test Student",
+    dateOfBirth: "2014-03-12",
+    gender: "Female",
+    residentialAddress: "Address",
+    academicSession: "2026-27",
+    className: "Class 7",
+    section: "B",
+    rollNumber: "15",
+    admissionDate: "2026-04-01",
+    status: "Active",
+    fatherName: "Father",
+    motherName: "Mother",
+    parentContact: "+91 99999 77777",
+  });
+
+  // Student scored 28 in Math (Pass marks is 33). Award 5 grace marks.
+  const marksSaved = await storageService.saveMarksBatch({
+    admissionNumber: graceTestAdmNo,
+    academicSession: "2026-27",
+    examinationName: "Annual Examination",
+    className: "Class 7",
+    section: "B",
+    subjects: [
+      {
+        subject: "Mathematics",
+        maxMarks: 100,
+        passMarks: 33,
+        marksObtained: 28,
+        graceMarks: 5,
+        isGrace: true,
+        isAbsent: false,
+      },
+      {
+        subject: "Science",
+        maxMarks: 100,
+        passMarks: 33,
+        marksObtained: 75,
+        graceMarks: 0,
+        isGrace: false,
+        isAbsent: false,
+      },
+    ],
+    teacherRemarks: "Promoted with grace",
+  });
+
+  assert.equal(marksSaved.length, 2);
+  const mathRecord = marksSaved.find((m) => m.subject === "Mathematics");
+  assert.equal(mathRecord.marksObtained, 28);
+  assert.equal(mathRecord.graceMarks, 5);
+  assert.equal(mathRecord.isGrace, true);
+  // 28 + 5 = 33% -> Grade D (Passed)
+  assert.equal(mathRecord.grade, "D");
+});

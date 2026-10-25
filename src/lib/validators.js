@@ -107,7 +107,10 @@ export const marksRecordSchema = z.object({
       maxMarks: z.number().positive(),
       passMarks: z.number().positive(),
       marksObtained: z.number().min(0),
+      graceMarks: z.number().min(0).optional().default(0),
+      isGrace: z.boolean().optional().default(false),
       isAbsent: z.boolean().default(false),
+      grade: z.string().optional(),
       remarks: z.string().optional(),
     })
   ).min(1, "At least one subject mark is required"),

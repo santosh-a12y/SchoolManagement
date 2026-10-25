@@ -1448,7 +1448,10 @@ export const storageService = {
       const maxMarks = Number(sub.maxMarks) || 100;
       const passMarks = Number(sub.passMarks) || 33;
       const marksObtained = sub.isAbsent ? 0 : Number(sub.marksObtained) || 0;
-      const percentage = maxMarks > 0 ? (marksObtained / maxMarks) * 100 : 0;
+      const isGrace = Boolean(sub.isGrace);
+      const graceMarks = isGrace ? Number(sub.graceMarks) || 0 : 0;
+      const effectiveMarks = marksObtained + graceMarks;
+      const percentage = maxMarks > 0 ? (effectiveMarks / maxMarks) * 100 : 0;
       const { grade } = calculateGrade(percentage);
 
       return {
@@ -1462,9 +1465,11 @@ export const storageService = {
         maxMarks,
         passMarks,
         marksObtained,
+        graceMarks,
+        isGrace: Boolean(isGrace),
         isAbsent: Boolean(sub.isAbsent),
         grade: sub.isAbsent ? "AB" : grade,
-        remarks: sub.remarks || teacherRemarks || "",
+        remarks: sub.remarks || (graceMarks > 0 ? `Passed with ${graceMarks} Grace Marks` : teacherRemarks || ""),
         recordedAt: new Date().toISOString(),
       };
     });

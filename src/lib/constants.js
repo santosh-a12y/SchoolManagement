@@ -81,3 +81,21 @@ export const GRADING_SCALE = [
 ];
 
 export const PASSING_PERCENTAGE = 33;
+
+/**
+ * Determine next academic class for annual promotion
+ * @param {string} currentClass e.g. "Class 5", "Nursery", "Class 12"
+ * @returns {string|null} e.g. "Class 6" or "Graduated"
+ */
+export function getNextSchoolClass(currentClass) {
+  if (!currentClass) return null;
+  const clean = String(currentClass).trim().toLowerCase();
+  const idx = SCHOOL_CLASSES.findIndex((c) => c.trim().toLowerCase() === clean);
+  if (idx !== -1 && idx < SCHOOL_CLASSES.length - 1) {
+    return SCHOOL_CLASSES[idx + 1];
+  }
+  if (idx === SCHOOL_CLASSES.length - 1) {
+    return "Graduated (Course Complete)";
+  }
+  return null;
+}
