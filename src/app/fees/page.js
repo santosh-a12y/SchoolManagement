@@ -168,6 +168,7 @@ export default function FeesOverviewPage() {
       <DataTable
         columns={columns}
         data={structures}
+        isLoading={isLoading}
         searchPlaceholder="Search fee category..."
         emptyTitle={`No fee structures set for ${selectedClass} (${selectedSession})`}
         emptyDescription="Click 'Add Fee Item' to set up tuition, admission, or transport fees."

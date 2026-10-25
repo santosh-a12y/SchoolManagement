@@ -23,12 +23,15 @@ export default function DataTable({
   onRowClick = null,
   emptyTitle = "No records found",
   emptyDescription = "Try adjusting your search or filters.",
+  isLoading = false,
+  initialPageSize = 10,
+  pageSizeOptions = [10, 25, 50, 100],
 }) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState(initialSortKey || (columns[0]?.key || ""));
   const [sortDir, setSortDir] = useState(initialSortDir);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(initialPageSize);
 
   // Search filter
   const filteredData = useMemo(() => {
@@ -68,12 +71,26 @@ export default function DataTable({
 
   // Pagination calculation
   const totalRecords = sortedData.length;
-  const totalPages = Math.ceil(totalRecords / pageSize) || 1;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
   const currentPage = Math.min(page, totalPages);
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return sortedData.slice(start, start + pageSize);
   }, [sortedData, currentPage, pageSize]);
+
+  // Numbered pagination windowing (e.g. 1, 2, 3 ... 10)
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, "...", totalPages];
+    }
+    if (currentPage >= totalPages - 3) {
+      return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+  }, [currentPage, totalPages]);
 
   // Sort click handler
   const handleSort = (key, sortable) => {
@@ -105,7 +122,10 @@ export default function DataTable({
           />
           {search && (
             <button
-              onClick={() => setSearch("")}
+              onClick={() => {
+                setSearch("");
+                setPage(1);
+              }}
               className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -123,40 +143,78 @@ export default function DataTable({
 
       {/* Table Content */}
       <div className="overflow-x-auto min-h-[300px]">
-        {paginatedData.length === 0 ? (
-          <div className="p-8">
-            <EmptyState title={emptyTitle} description={emptyDescription} />
-          </div>
-        ) : (
-          <table className="w-full text-left border-collapse text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs tracking-wider uppercase select-none">
-              <tr>
-                {columns.map((col) => (
-                  <th
-                    key={col.key}
-                    onClick={() => handleSort(col.key, col.sortable)}
-                    className={`px-4 py-3.5 ${
-                      col.sortable ? "cursor-pointer hover:bg-slate-100" : ""
-                    } ${col.headerClassName || ""}`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>{col.label}</span>
-                      {col.sortable && sortKey === col.key && (
-                        <span>
-                          {sortDir === "asc" ? (
-                            <ChevronUp className="w-3.5 h-3.5 text-blue-600" />
-                          ) : (
-                            <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
-                          )}
-                        </span>
+        <table className="w-full text-left border-collapse text-sm">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs tracking-wider uppercase select-none">
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  onClick={() => handleSort(col.key, col.sortable)}
+                  className={`px-4 py-3.5 ${
+                    col.sortable ? "cursor-pointer hover:bg-slate-100" : ""
+                  } ${col.headerClassName || ""}`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>{col.label}</span>
+                    {col.sortable && sortKey === col.key && (
+                      <span>
+                        {sortDir === "asc" ? (
+                          <ChevronUp className="w-3.5 h-3.5 text-blue-600" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 text-slate-800">
+            {isLoading ? (
+              // Realistic Shimmer Skeleton Rows matching column blueprint
+              Array.from({ length: Math.min(pageSize, 8) }).map((_, rIdx) => (
+                <tr key={`skeleton-${rIdx}`} className="animate-pulse">
+                  {columns.map((col, cIdx) => (
+                    <td
+                      key={col.key || cIdx}
+                      className={`px-4 py-3.5 align-middle ${col.className || ""}`}
+                    >
+                      {cIdx === 0 ? (
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-slate-200 shrink-0" />
+                          <div className="space-y-1.5 flex-1 max-w-[160px]">
+                            <div className="h-3.5 bg-slate-200 rounded w-4/5" />
+                            <div className="h-2.5 bg-slate-100 rounded w-1/2" />
+                          </div>
+                        </div>
+                      ) : cIdx === columns.length - 1 && (col.key === "actions" || col.label === "Actions") ? (
+                        <div className="flex items-center justify-end gap-1.5">
+                          <div className="w-7 h-7 bg-slate-200/80 rounded-md" />
+                          <div className="w-7 h-7 bg-slate-200/80 rounded-md" />
+                          <div className="w-7 h-7 bg-slate-200/80 rounded-md" />
+                        </div>
+                      ) : (
+                        <div
+                          className="h-3.5 bg-slate-200 rounded"
+                          style={{
+                            width: `${40 + ((rIdx * 19 + cIdx * 23) % 45)}%`,
+                            maxWidth: "180px",
+                          }}
+                        />
                       )}
-                    </div>
-                  </th>
-                ))}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : paginatedData.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="p-8 text-center">
+                  <EmptyState title={emptyTitle} description={emptyDescription} />
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
-              {paginatedData.map((row, idx) => (
+            ) : (
+              paginatedData.map((row, idx) => (
                 <tr
                   key={row.id || row.admissionNumber || row.receiptNumber || idx}
                   onClick={() => onRowClick && onRowClick(row)}
@@ -173,15 +231,31 @@ export default function DataTable({
                     </td>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Pagination Footer */}
-      {totalRecords > 0 && (
+      {isLoading ? (
+        <div className="px-4 py-3 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs animate-pulse">
+          <div className="flex items-center gap-2">
+            <div className="h-4 bg-slate-200 rounded w-24" />
+            <div className="h-6 bg-slate-200 rounded w-16" />
+            <div className="h-4 bg-slate-200 rounded w-36" />
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="h-7 w-7 bg-slate-200 rounded-md" />
+            <div className="h-7 w-7 bg-slate-200 rounded-md" />
+            <div className="h-7 w-24 bg-slate-200 rounded-md" />
+            <div className="h-7 w-7 bg-slate-200 rounded-md" />
+            <div className="h-7 w-7 bg-slate-200 rounded-md" />
+          </div>
+        </div>
+      ) : totalRecords > 0 ? (
         <div className="px-4 py-3 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+          {/* Left: Rows Per Page & Record Count */}
           <div className="flex items-center gap-2">
             <span>Rows per page:</span>
             <select
@@ -190,11 +264,13 @@ export default function DataTable({
                 setPageSize(Number(e.target.value));
                 setPage(1);
               }}
-              className="border border-slate-300 rounded px-2 py-1 bg-white text-xs text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="border border-slate-300 rounded px-2 py-1 bg-white text-xs text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
             >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
             </select>
             <span className="text-slate-400">|</span>
             <span>
@@ -210,45 +286,74 @@ export default function DataTable({
             </span>
           </div>
 
+          {/* Right: Numbered Page Buttons & Navigation Chevrons */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(1)}
               disabled={currentPage <= 1}
-              className="p-1 rounded border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
               title="First Page"
             >
-              <ChevronsLeft className="w-4 h-4 text-slate-600" />
+              <ChevronsLeft className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage <= 1}
-              className="p-1 rounded border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
               title="Previous Page"
             >
-              <ChevronLeft className="w-4 h-4 text-slate-600" />
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="px-2 font-medium text-slate-700">
-              Page {currentPage} of {totalPages}
-            </span>
+
+            {/* Numbered Pills with Smart Windowing */}
+            <div className="flex items-center gap-1 px-1">
+              {pageNumbers.map((pNum, idx) => {
+                if (pNum === "...") {
+                  return (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="px-1.5 py-1 text-xs text-slate-400 font-semibold select-none"
+                    >
+                      ...
+                    </span>
+                  );
+                }
+                const isActive = pNum === currentPage;
+                return (
+                  <button
+                    key={`page-${pNum}`}
+                    onClick={() => setPage(pNum)}
+                    className={`min-w-[28px] h-7 px-2 text-xs rounded-md transition-colors cursor-pointer ${
+                      isActive
+                        ? "bg-blue-600 text-white font-bold shadow-xs cursor-default"
+                        : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 font-medium"
+                    }`}
+                  >
+                    {pNum}
+                  </button>
+                );
+              })}
+            </div>
+
             <button
               onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage >= totalPages}
-              className="p-1 rounded border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
               title="Next Page"
             >
-              <ChevronRight className="w-4 h-4 text-slate-600" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setPage(totalPages)}
               disabled={currentPage >= totalPages}
-              className="p-1 rounded border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
               title="Last Page"
             >
-              <ChevronsRight className="w-4 h-4 text-slate-600" />
+              <ChevronsRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

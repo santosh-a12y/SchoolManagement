@@ -219,6 +219,9 @@ export default function StudentsPage() {
       <DataTable
         columns={columns}
         data={students}
+        isLoading={isLoading}
+        initialPageSize={10}
+        pageSizeOptions={[10, 25, 50, 100]}
         searchPlaceholder="Search by admission no, name, phone, roll..."
         filterComponents={filterComponents}
         onRowClick={(row) => router.push(`/students/${row.admissionNumber}`)}

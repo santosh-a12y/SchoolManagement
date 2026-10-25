@@ -7,6 +7,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { DashboardSkeleton } from "@/components/ui/Skeleton";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import {
   Users,
@@ -102,7 +103,25 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <AppLayout>
-        <LoadingSpinner message="Calculating dashboard analytics..." />
+        <PageHeader
+          title="Administrative Dashboard"
+          subtitle="Real-time school performance metrics, fee collections, and student management actions"
+          actions={
+            <div className="flex items-center gap-2">
+              <Link href="/students/search">
+                <Button variant="outline" size="sm" icon={Search}>
+                  Quick Search
+                </Button>
+              </Link>
+              <Link href="/students/new">
+                <Button variant="primary" size="sm" icon={UserPlus}>
+                  Add Student
+                </Button>
+              </Link>
+            </div>
+          }
+        />
+        <DashboardSkeleton />
       </AppLayout>
     );
   }

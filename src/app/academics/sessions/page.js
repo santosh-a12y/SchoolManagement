@@ -143,6 +143,7 @@ export default function SessionsPage() {
       <DataTable
         columns={columns}
         data={sessions}
+        isLoading={isLoading}
         searchPlaceholder="Search academic sessions..."
       />
 

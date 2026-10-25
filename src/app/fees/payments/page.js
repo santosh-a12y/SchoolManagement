@@ -26,6 +26,7 @@ function FeePaymentsContent() {
   const [selectedAdmissionNo, setSelectedAdmissionNo] = useState(initialAdmNo);
   const [studentProfile, setStudentProfile] = useState(null);
   const [paymentsList, setPaymentsList] = useState([]);
+  const [isPaymentsLoading, setIsPaymentsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [successReceiptNo, setSuccessReceiptNo] = useState("");
@@ -41,11 +42,14 @@ function FeePaymentsContent() {
   });
 
   const loadRecentPayments = async () => {
+    setIsPaymentsLoading(true);
     try {
       const allPayments = await feeService.getPayments();
       setPaymentsList(allPayments);
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsPaymentsLoading(false);
     }
   };
 
@@ -384,6 +388,7 @@ function FeePaymentsContent() {
         <DataTable
           columns={paymentColumns}
           data={paymentsList}
+          isLoading={isPaymentsLoading}
           searchPlaceholder="Search receipt number, student name, mode..."
         />
       </div>

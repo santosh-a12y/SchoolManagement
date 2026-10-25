@@ -12,6 +12,7 @@ import Select from "@/components/ui/Select";
 import examService from "@/services/examService";
 import { formatDate } from "@/lib/formatters";
 import { SCHOOL_CLASSES, ACADEMIC_SESSIONS } from "@/lib/constants";
+import { CardGridSkeleton } from "@/components/ui/Skeleton";
 import { Award, Calendar, Plus, Clock, MapPin, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 
 export default function ExaminationsPage() {
@@ -300,11 +301,14 @@ export default function ExaminationsPage() {
           <DataTable
             columns={scheduleColumns}
             data={schedules}
+            isLoading={isLoading}
             searchPlaceholder="Search schedule subjects, dates..."
             emptyTitle={`No schedule configured for ${selectedExam} (${selectedClass})`}
             emptyDescription="Click 'Add Schedule Item' above to schedule subjects and exam dates."
           />
         </div>
+      ) : isLoading ? (
+        <CardGridSkeleton count={6} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {examinations.map((exam) => (

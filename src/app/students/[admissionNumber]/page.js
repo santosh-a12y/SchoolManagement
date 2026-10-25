@@ -8,6 +8,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { StudentProfileSkeleton } from "@/components/ui/Skeleton";
 import StudentForm from "@/components/students/StudentForm";
 import studentService from "@/services/studentService";
 import { formatCurrency, formatDate, calculateGrade } from "@/lib/formatters";
@@ -63,7 +64,15 @@ export default function StudentProfilePage({ params }) {
   if (isLoading) {
     return (
       <AppLayout>
-        <LoadingSpinner message={`Loading student ${admissionNumber}...`} />
+        <PageHeader
+          title="Student Profile"
+          subtitle={`Loading records for admission number ${admissionNumber}...`}
+          breadcrumbs={[
+            { label: "Students", href: "/students" },
+            { label: admissionNumber },
+          ]}
+        />
+        <StudentProfileSkeleton />
       </AppLayout>
     );
   }

@@ -220,6 +220,7 @@ export default function PendingFeesPage() {
       <DataTable
         columns={columns}
         data={studentRows}
+        isLoading={isLoading}
         searchPlaceholder="Search student name, admission number, contact..."
         emptyTitle="No fee accounts found"
       />

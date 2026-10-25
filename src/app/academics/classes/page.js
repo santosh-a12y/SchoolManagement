@@ -312,6 +312,7 @@ export default function ClassesPage() {
       <DataTable
         columns={columns}
         data={classes}
+        isLoading={isLoading}
         searchPlaceholder="Search classes or levels..."
       />
 
