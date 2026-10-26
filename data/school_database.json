@@ -1278,6 +1278,61 @@
       "parentContact": "+91 98888 11111",
       "createdAt": "2026-10-25T17:57:16.018Z",
       "updatedAt": "2026-10-25T17:57:16.018Z"
+    },
+    {
+      "admissionNumber": "TEST-ADM-1793031510106",
+      "studentName": "Test Student Alpha",
+      "dateOfBirth": "2015-05-10",
+      "gender": "Male",
+      "bloodGroup": "A+",
+      "residentialAddress": "Test Address 123",
+      "academicSession": "2026-27",
+      "className": "Class 5",
+      "section": "A",
+      "rollNumber": "99",
+      "admissionDate": "2026-04-01",
+      "status": "Active",
+      "fatherName": "Father Alpha",
+      "motherName": "Mother Alpha",
+      "parentContact": "+91 99999 88888",
+      "createdAt": "2026-10-26T16:18:30.110Z",
+      "updatedAt": "2026-10-26T16:18:30.110Z"
+    },
+    {
+      "admissionNumber": "GRACE-ADM-1793031510127",
+      "studentName": "Grace Test Student",
+      "dateOfBirth": "2014-03-12",
+      "gender": "Female",
+      "residentialAddress": "Address",
+      "academicSession": "2026-27",
+      "className": "Class 7",
+      "section": "B",
+      "rollNumber": "15",
+      "admissionDate": "2026-04-01",
+      "status": "Active",
+      "fatherName": "Father",
+      "motherName": "Mother",
+      "parentContact": "+91 99999 77777",
+      "createdAt": "2026-10-26T16:18:30.128Z",
+      "updatedAt": "2026-10-26T16:18:30.128Z"
+    },
+    {
+      "admissionNumber": "DISC-ADM-1793031510131",
+      "studentName": "Discount Test Pupil",
+      "dateOfBirth": "2015-06-15",
+      "gender": "Male",
+      "residentialAddress": "Surat, Gujarat",
+      "academicSession": "2026-27",
+      "className": "Class 5",
+      "section": "A",
+      "rollNumber": "45",
+      "admissionDate": "2026-04-01",
+      "status": "Active",
+      "fatherName": "Father Discount",
+      "motherName": "Mother Discount",
+      "parentContact": "+91 98888 11111",
+      "createdAt": "2026-10-26T16:18:30.132Z",
+      "updatedAt": "2026-10-26T16:18:30.132Z"
     }
   ],
   "marks": [
@@ -2844,6 +2899,78 @@
       "grade": "B1",
       "remarks": "Promoted with grace",
       "recordedAt": "2026-10-25T17:57:16.015Z"
+    },
+    {
+      "id": "mrk-1793031510116-vf90",
+      "admissionNumber": "TEST-ADM-1793031510106",
+      "academicSession": "2026-27",
+      "examinationName": "Annual Exam",
+      "className": "Class 5",
+      "section": "A",
+      "subject": "English",
+      "maxMarks": 100,
+      "passMarks": 33,
+      "marksObtained": 90,
+      "graceMarks": 0,
+      "isGrace": false,
+      "isAbsent": false,
+      "grade": "A2",
+      "remarks": "Exemplary student",
+      "recordedAt": "2026-10-26T16:18:30.116Z"
+    },
+    {
+      "id": "mrk-1793031510116-3akt",
+      "admissionNumber": "TEST-ADM-1793031510106",
+      "academicSession": "2026-27",
+      "examinationName": "Annual Exam",
+      "className": "Class 5",
+      "section": "A",
+      "subject": "Mathematics",
+      "maxMarks": 100,
+      "passMarks": 33,
+      "marksObtained": 95,
+      "graceMarks": 0,
+      "isGrace": false,
+      "isAbsent": false,
+      "grade": "A1",
+      "remarks": "Exemplary student",
+      "recordedAt": "2026-10-26T16:18:30.116Z"
+    },
+    {
+      "id": "mrk-1793031510129-h4rv",
+      "admissionNumber": "GRACE-ADM-1793031510127",
+      "academicSession": "2026-27",
+      "examinationName": "Annual Examination",
+      "className": "Class 7",
+      "section": "B",
+      "subject": "Mathematics",
+      "maxMarks": 100,
+      "passMarks": 33,
+      "marksObtained": 28,
+      "graceMarks": 5,
+      "isGrace": true,
+      "isAbsent": false,
+      "grade": "D",
+      "remarks": "Passed with 5 Grace Marks",
+      "recordedAt": "2026-10-26T16:18:30.129Z"
+    },
+    {
+      "id": "mrk-1793031510129-9v85",
+      "admissionNumber": "GRACE-ADM-1793031510127",
+      "academicSession": "2026-27",
+      "examinationName": "Annual Examination",
+      "className": "Class 7",
+      "section": "B",
+      "subject": "Science",
+      "maxMarks": 100,
+      "passMarks": 33,
+      "marksObtained": 75,
+      "graceMarks": 0,
+      "isGrace": false,
+      "isAbsent": false,
+      "grade": "B1",
+      "remarks": "Promoted with grace",
+      "recordedAt": "2026-10-26T16:18:30.129Z"
     }
   ],
   "feePayments": [
@@ -3557,6 +3684,40 @@
       "receivedBy": "Accounts Dept",
       "remarks": "Full annual tuition with 10% upfront discount",
       "createdAt": "2026-10-25T17:57:16.021Z"
+    },
+    {
+      "receiptNumber": "RCP-2026-0046",
+      "admissionNumber": "TEST-ADM-1793031510106",
+      "studentName": "Test Student Alpha",
+      "academicSession": "2026-27",
+      "className": "Class 5",
+      "feeCategory": "Tuition Fee",
+      "amountPaid": 5000,
+      "discountAmount": 0,
+      "discountReason": "",
+      "paymentMode": "UPI",
+      "paymentDate": "2026-10-26",
+      "transactionRef": "",
+      "receivedBy": "Staff",
+      "remarks": "",
+      "createdAt": "2026-10-26T16:18:30.125Z"
+    },
+    {
+      "receiptNumber": "RCP-2026-0047",
+      "admissionNumber": "DISC-ADM-1793031510131",
+      "studentName": "Discount Test Pupil",
+      "academicSession": "2026-27",
+      "className": "Class 5",
+      "feeCategory": "Tuition Fee",
+      "amountPaid": 44100,
+      "discountAmount": 4900,
+      "discountReason": "Early Bird Annual Full Payment (10% Discount)",
+      "paymentMode": "Bank Transfer",
+      "paymentDate": "2026-10-26",
+      "transactionRef": "",
+      "receivedBy": "Accounts Dept",
+      "remarks": "Full annual tuition with 10% upfront discount",
+      "createdAt": "2026-10-26T16:18:30.135Z"
     }
   ],
   "auditLog": [
@@ -4567,6 +4728,123 @@
       "details": "Deleted user usr-mvo4r5h6",
       "performedBy": "Staff",
       "timestamp": "2026-10-25T17:57:16.029Z"
+    },
+    {
+      "id": "aud-1793029559900",
+      "action": "CREATE_USER",
+      "entity": "User",
+      "entityId": "usr-mvpfi6vw",
+      "details": "Created user MANOJ YADAV with role Staff Member",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T15:45:59.900Z"
+    },
+    {
+      "id": "aud-1793029611255",
+      "action": "UPDATE_USER",
+      "entity": "User",
+      "entityId": "usr-mvpfi6vw",
+      "details": "Updated user MANOJ YADAV (Staff Member)",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T15:46:51.255Z"
+    },
+    {
+      "id": "aud-1793029650351",
+      "action": "DELETE_USER",
+      "entity": "User",
+      "entityId": "usr-mvpfi6vw",
+      "details": "Deleted user usr-mvpfi6vw",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T15:47:30.351Z"
+    },
+    {
+      "id": "aud-1793029984250",
+      "action": "CREATE_USER",
+      "entity": "User",
+      "entityId": "usr-mvpfrabe",
+      "details": "Created user Manoj Yadav with role Staff Member",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T15:53:04.250Z"
+    },
+    {
+      "id": "aud-1793031379441",
+      "action": "CREATE_USER",
+      "entity": "User",
+      "entityId": "usr-mvpgl509",
+      "details": "Created user Live Test Teacher with role Science Teacher",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T16:16:19.441Z"
+    },
+    {
+      "id": "aud-1793031510111",
+      "action": "CREATE_STUDENT",
+      "entity": "Student",
+      "entityId": "TEST-ADM-1793031510106",
+      "details": "Admitted student Test Student Alpha in Class 5-A",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T16:18:30.111Z"
+    },
+    {
+      "id": "aud-1793031510125",
+      "action": "FEE_PAYMENT",
+      "entity": "FeeReceipt",
+      "entityId": "RCP-2026-0046",
+      "details": "Collected 5000 for Test Student Alpha (Tuition Fee)",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T16:18:30.125Z"
+    },
+    {
+      "id": "aud-1793031510129",
+      "action": "CREATE_STUDENT",
+      "entity": "Student",
+      "entityId": "GRACE-ADM-1793031510127",
+      "details": "Admitted student Grace Test Student in Class 7-B",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T16:18:30.129Z"
+    },
+    {
+      "id": "aud-1793031510132",
+      "action": "CREATE_STUDENT",
+      "entity": "Student",
+      "entityId": "DISC-ADM-1793031510131",
+      "details": "Admitted student Discount Test Pupil in Class 5-A",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T16:18:30.132Z"
+    },
+    {
+      "id": "aud-1793031510135",
+      "action": "FEE_PAYMENT",
+      "entity": "FeeReceipt",
+      "entityId": "RCP-2026-0047",
+      "details": "Collected 44100 (with 4900 discount: Early Bird Annual Full Payment (10% Discount)) for Discount Test Pupil (Tuition Fee)",
+      "performedBy": "Accounts Dept",
+      "timestamp": "2026-10-26T16:18:30.135Z"
+    },
+    {
+      "id": "aud-1793031510141",
+      "action": "CREATE_USER",
+      "entity": "User",
+      "entityId": "usr-mvpgnzp8",
+      "details": "Created user Vikram Malhotra with role Senior Lab Assistant",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T16:18:30.141Z"
+    },
+    {
+      "id": "aud-1793031510142",
+      "action": "UPDATE_USER",
+      "entity": "User",
+      "entityId": "usr-mvpgnzp8",
+      "details": "Updated user Vikram Malhotra (Chief Lab Officer)",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T16:18:30.142Z"
+    },
+    {
+      "id": "aud-1793031510144",
+      "action": "DELETE_USER",
+      "entity": "User",
+      "entityId": "usr-mvpgnzp8",
+      "details": "Deleted user usr-mvpgnzp8",
+      "performedBy": "Staff",
+      "timestamp": "2026-10-26T16:18:30.144Z"
     }
   ],
   "users": [
@@ -4663,6 +4941,21 @@
       "updatedAt": "2026-10-25T17:24:30.426Z",
       "username": "usr-mvo3l0t6",
       "password": "staff123"
+    },
+    {
+      "id": "usr-mvpfrabe",
+      "name": "Manoj Yadav",
+      "username": "ymanoj802",
+      "email": "ymanoj802@gmail.com",
+      "password": "Manoj1512",
+      "role": "Staff Member",
+      "permissions": [
+        "students.view",
+        "documents.cards"
+      ],
+      "status": "Active",
+      "createdAt": "2026-10-26T15:53:04.250Z",
+      "updatedAt": "2026-10-26T15:53:04.250Z"
     }
   ]
 }

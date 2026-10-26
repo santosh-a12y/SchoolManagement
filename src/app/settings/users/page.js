@@ -167,9 +167,12 @@ export default function UsersPage() {
     setErrorMsg("");
 
     try {
+      const rawId = formEmail.trim().toLowerCase();
+      const isEmail = rawId.includes("@");
       const payload = {
         name: formName.trim(),
-        email: formEmail.trim().toLowerCase(),
+        email: isEmail ? rawId : "",
+        username: !isEmail && rawId ? rawId : undefined,
         password: formPassword.trim() || (editingUser?.password || "staff123"),
         role: formRole.trim(),
         status: formStatus,
@@ -475,8 +478,8 @@ export default function UsersPage() {
             />
             <Input
               label="Email / Staff Login ID"
-              type="email"
-              placeholder="e.g. ramesh@school.com"
+              type="text"
+              placeholder="e.g. ramesh@school.com or ramesh123"
               value={formEmail}
               onChange={(e) => setFormEmail(e.target.value)}
             />

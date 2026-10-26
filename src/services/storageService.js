@@ -552,8 +552,10 @@ async function readLocalDatabase() {
   } catch (err) {
     if (err.code === "ENOENT" || !err) {
       const initial = getInitialDatabase();
-      await fs.mkdir(path.dirname(DATA_FILE_PATH), { recursive: true });
-      await fs.writeFile(DATA_FILE_PATH, JSON.stringify(initial, null, 2), "utf-8");
+      try {
+        await fs.mkdir(path.dirname(DATA_FILE_PATH), { recursive: true });
+        await fs.writeFile(DATA_FILE_PATH, JSON.stringify(initial, null, 2), "utf-8");
+      } catch {}
       return initial;
     }
     throw err;
@@ -568,13 +570,62 @@ async function writeLocalDatabase(data) {
     await fs.mkdir(path.dirname(DATA_FILE_PATH), { recursive: true });
     await fs.writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2), "utf-8");
   } catch (err) {
-    if (err.code === "EROFS" || err.message?.includes("read-only")) {
+    if (
+      err.code === "EROFS" ||
+      err.code === "EACCES" ||
+      err.code === "EPERM" ||
+      err.message?.includes("read-only") ||
+      err.message?.includes("permission denied")
+    ) {
       // In serverless environments (Netlify, Vercel, AWS Lambda), the local filesystem is read-only.
-      console.warn("Read-only filesystem detected (Serverless environment). Skipped local database file write.");
+      console.warn("Read-only or restricted filesystem detected (Serverless environment). Skipped local database file write.");
       return;
     }
     throw err;
   }
+}
+
+/**
+ * Parse permissions stored as JSON string or comma-separated list into array
+ */
+function parseUserPermissions(permissions) {
+  if (Array.isArray(permissions)) return permissions;
+  if (!permissions || typeof permissions !== "string") return [];
+  try {
+    const trimmed = permissions.trim();
+    if (trimmed.startsWith("[")) {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    if (trimmed) {
+      return trimmed.split(",").map((p) => p.trim()).filter(Boolean);
+    }
+  } catch {
+    return permissions.split(",").map((p) => p.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+/**
+ * Format user record for Google Sheets storage
+ */
+function formatUserForSheet(u) {
+  return {
+    id: u.id,
+    name: u.name || "Staff Member",
+    username: u.username || (u.email ? u.email.split("@")[0] : u.id) || "",
+    email: u.email || "",
+    password: u.password || "staff123",
+    role: u.role || "Staff",
+    permissions: Array.isArray(u.permissions)
+      ? JSON.stringify(u.permissions)
+      : typeof u.permissions === "string"
+      ? u.permissions
+      : "[]",
+    status: u.status || "Active",
+    createdAt: u.createdAt || new Date().toISOString(),
+    updatedAt: u.updatedAt || new Date().toISOString(),
+  };
 }
 
 /**
@@ -1863,10 +1914,45 @@ export const storageService = {
   // User & Permission Management Methods
   // ----------------------------------------------------
   async getUsers() {
+    if (isGoogleSheetsConfigured()) {
+      try {
+        const rows = await getWorksheetData(process.env.GOOGLE_SHEET_ID, "Users");
+        if (rows && rows.length > 0) {
+          return rows.map((u) => ({
+            ...u,
+            permissions: parseUserPermissions(u.permissions),
+            status: u.status || "Active",
+          }));
+        } else {
+          // Initialize Google Sheets with existing local users or DEFAULT_USERS
+          let seedUsers = DEFAULT_USERS;
+          try {
+            const db = await readLocalDatabase();
+            if (db.users && Array.isArray(db.users) && db.users.length > 0) {
+              seedUsers = db.users;
+            }
+          } catch {}
+
+          const formattedSeed = seedUsers.map(formatUserForSheet);
+          await setWorksheetData(process.env.GOOGLE_SHEET_ID, "Users", formattedSeed);
+          invalidateWorksheetCache("Users");
+          return seedUsers.map((u) => ({
+            ...u,
+            permissions: parseUserPermissions(u.permissions),
+            status: u.status || "Active",
+          }));
+        }
+      } catch (err) {
+        console.warn("Google Sheets Users read failed, falling back to local:", err.message);
+      }
+    }
+
     const db = await readLocalDatabase();
     if (!db.users || !Array.isArray(db.users) || db.users.length === 0) {
       db.users = [...DEFAULT_USERS];
-      await writeLocalDatabase(db);
+      try {
+        await writeLocalDatabase(db);
+      } catch {}
     }
     return db.users;
   },
@@ -1877,35 +1963,75 @@ export const storageService = {
   },
 
   async createUser(userData) {
-    const db = await readLocalDatabase();
-    if (!db.users) db.users = [...DEFAULT_USERS];
+    const rawEmailOrUser = (userData.email || userData.username || "").trim().toLowerCase();
+    const isEmail = rawEmailOrUser.includes("@");
+    const email = isEmail ? rawEmailOrUser : (userData.email?.trim().toLowerCase() || "");
+    const username =
+      userData.username?.trim().toLowerCase() ||
+      (!isEmail && rawEmailOrUser ? rawEmailOrUser : email ? email.split("@")[0] : `staff_${Date.now().toString(36)}`);
 
     const newUser = {
       id: userData.id || `usr-${Date.now().toString(36)}`,
       name: userData.name?.trim() || "Staff Member",
-      username: userData.username?.trim().toLowerCase() || userData.email?.split("@")[0] || `staff_${Date.now().toString(36)}`,
-      email: userData.email?.trim().toLowerCase() || "",
+      username,
+      email,
       password: userData.password?.trim() || "staff123",
       role: userData.role?.trim() || "Staff",
-      permissions: Array.isArray(userData.permissions) ? userData.permissions : [],
+      permissions: Array.isArray(userData.permissions)
+        ? userData.permissions
+        : parseUserPermissions(userData.permissions),
       status: userData.status || "Active",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    db.users.push(newUser);
-    if (db.auditLog) {
-      db.auditLog.push({
-        id: `aud-${Date.now()}`,
-        action: "CREATE_USER",
-        entity: "User",
-        entityId: newUser.id,
-        details: `Created user ${newUser.name} with role ${newUser.role}`,
-        performedBy: "Staff",
-        timestamp: new Date().toISOString(),
-      });
+    if (isGoogleSheetsConfigured()) {
+      try {
+        const liveUsers = await this.getUsers();
+        if (newUser.email && liveUsers.some((u) => u.email && u.email.toLowerCase() === newUser.email.toLowerCase())) {
+          throw new Error(`User with email "${newUser.email}" already exists`);
+        }
+        if (newUser.username && liveUsers.some((u) => u.username && u.username.toLowerCase() === newUser.username.toLowerCase())) {
+          throw new Error(`User with username "${newUser.username}" already exists`);
+        }
+
+        await appendWorksheetRow(
+          process.env.GOOGLE_SHEET_ID,
+          "Users",
+          formatUserForSheet(newUser)
+        );
+        invalidateWorksheetCache("Users");
+      } catch (err) {
+        if (err.message?.includes("already exists")) throw err;
+        console.error("Google Sheets createUser failed:", err.message);
+        if (!isGoogleSheetsConfigured()) throw err;
+      }
     }
-    await writeLocalDatabase(db);
+
+    // Mirror to local database if possible
+    try {
+      const db = await readLocalDatabase();
+      if (!db.users) db.users = [...DEFAULT_USERS];
+      const existing = db.users.find((u) => u.id === newUser.id);
+      if (!existing) {
+        db.users.push(newUser);
+        if (db.auditLog) {
+          db.auditLog.push({
+            id: `aud-${Date.now()}`,
+            action: "CREATE_USER",
+            entity: "User",
+            entityId: newUser.id,
+            details: `Created user ${newUser.name} with role ${newUser.role}`,
+            performedBy: "Staff",
+            timestamp: new Date().toISOString(),
+          });
+        }
+        await writeLocalDatabase(db);
+      }
+    } catch (err) {
+      if (!isGoogleSheetsConfigured()) throw err;
+    }
+
     return newUser;
   },
 
@@ -1939,6 +2065,43 @@ export const storageService = {
   },
 
   async updateUser(id, userData) {
+    if (isGoogleSheetsConfigured()) {
+      const liveUsers = await this.getUsers();
+      const index = liveUsers.findIndex((u) => u.id === id);
+      if (index === -1) {
+        throw new Error(`User with ID ${id} not found`);
+      }
+
+      const updated = {
+        ...liveUsers[index],
+        ...userData,
+        permissions: Array.isArray(userData.permissions)
+          ? userData.permissions
+          : userData.permissions !== undefined
+          ? parseUserPermissions(userData.permissions)
+          : liveUsers[index].permissions,
+        updatedAt: new Date().toISOString(),
+      };
+      liveUsers[index] = updated;
+
+      const formattedRows = liveUsers.map(formatUserForSheet);
+      await setWorksheetData(process.env.GOOGLE_SHEET_ID, "Users", formattedRows);
+      invalidateWorksheetCache("Users");
+
+      try {
+        const db = await readLocalDatabase();
+        if (db.users) {
+          const localIdx = db.users.findIndex((u) => u.id === id);
+          if (localIdx >= 0) {
+            db.users[localIdx] = updated;
+            await writeLocalDatabase(db);
+          }
+        }
+      } catch {}
+
+      return updated;
+    }
+
     const db = await readLocalDatabase();
     if (!db.users) db.users = [...DEFAULT_USERS];
 
@@ -1973,6 +2136,28 @@ export const storageService = {
     if (id === "usr-admin") {
       throw new Error("Cannot delete primary Super Admin account");
     }
+
+    if (isGoogleSheetsConfigured()) {
+      const liveUsers = await this.getUsers();
+      const initialLen = liveUsers.length;
+      const filtered = liveUsers.filter((u) => u.id !== id);
+      if (filtered.length !== initialLen) {
+        const formattedRows = filtered.map(formatUserForSheet);
+        await setWorksheetData(process.env.GOOGLE_SHEET_ID, "Users", formattedRows);
+        invalidateWorksheetCache("Users");
+
+        try {
+          const db = await readLocalDatabase();
+          if (db.users) {
+            db.users = db.users.filter((u) => u.id !== id);
+            await writeLocalDatabase(db);
+          }
+        } catch {}
+        return true;
+      }
+      return false;
+    }
+
     const db = await readLocalDatabase();
     if (!db.users) return false;
 

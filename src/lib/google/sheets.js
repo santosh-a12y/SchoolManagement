@@ -98,6 +98,18 @@ export const WORKSHEET_HEADERS = {
   ],
   Settings: ["key", "value", "updatedAt"],
   AuditLog: ["id", "action", "entity", "entityId", "details", "performedBy", "timestamp"],
+  Users: [
+    "id",
+    "name",
+    "username",
+    "email",
+    "password",
+    "role",
+    "permissions",
+    "status",
+    "createdAt",
+    "updatedAt",
+  ],
 };
 
 /**
