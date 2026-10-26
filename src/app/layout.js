@@ -1,5 +1,6 @@
 import "./globals.css";
 import appConfig from "@/config/appConfig";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata = {
   title: `${appConfig.school.name} — Student Management System`,
@@ -44,7 +45,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="min-h-full flex flex-col antialiased text-slate-900 bg-slate-50">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

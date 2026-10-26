@@ -28,7 +28,7 @@ export default function DataTable({
   pageSizeOptions = [10, 25, 50, 100],
 }) {
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState(initialSortKey || (columns[0]?.key || ""));
+  const [sortKey, setSortKey] = useState(initialSortKey || (columns[0]?.key || columns[0]?.accessorKey || ""));
   const [sortDir, setSortDir] = useState(initialSortDir);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
@@ -151,28 +151,32 @@ export default function DataTable({
         <table className="w-full text-left border-collapse text-sm">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs tracking-wider uppercase select-none">
             <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  onClick={() => handleSort(col.key, col.sortable)}
-                  className={`px-4 py-3.5 ${
-                    col.sortable ? "cursor-pointer hover:bg-slate-100" : ""
-                  } ${col.headerClassName || ""}`}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>{col.label}</span>
-                    {col.sortable && sortKey === col.key && (
-                      <span>
-                        {sortDir === "asc" ? (
-                          <ChevronUp className="w-3.5 h-3.5 text-blue-600" />
-                        ) : (
-                          <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </th>
-              ))}
+              {columns.map((col, idx) => {
+                const colKey = col.key || col.accessorKey || col.id || `col-${idx}`;
+                const colLabel = col.label || col.header || col.title || "";
+                return (
+                  <th
+                    key={colKey}
+                    onClick={() => handleSort(colKey, col.sortable)}
+                    className={`px-4 py-3.5 ${
+                      col.sortable ? "cursor-pointer hover:bg-slate-100" : ""
+                    } ${col.headerClassName || ""}`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>{colLabel}</span>
+                      {col.sortable && sortKey === colKey && (
+                        <span>
+                          {sortDir === "asc" ? (
+                            <ChevronUp className="w-3.5 h-3.5 text-blue-600" />
+                          ) : (
+                            <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-800">
@@ -182,7 +186,7 @@ export default function DataTable({
                 <tr key={`skeleton-${rIdx}`} className="animate-pulse">
                   {columns.map((col, cIdx) => (
                     <td
-                      key={col.key || cIdx}
+                      key={col.key || col.accessorKey || cIdx}
                       className={`px-4 py-3.5 align-middle ${col.className || ""}`}
                     >
                       {cIdx === 0 ? (
@@ -193,7 +197,7 @@ export default function DataTable({
                             <div className="h-2.5 bg-slate-100 rounded w-1/2" />
                           </div>
                         </div>
-                      ) : cIdx === columns.length - 1 && (col.key === "actions" || col.label === "Actions") ? (
+                      ) : cIdx === columns.length - 1 && (col.key === "actions" || col.label === "Actions" || col.header === "Actions") ? (
                         <div className="flex items-center justify-end gap-1.5">
                           <div className="w-7 h-7 bg-slate-200/80 rounded-md" />
                           <div className="w-7 h-7 bg-slate-200/80 rounded-md" />
@@ -227,14 +231,29 @@ export default function DataTable({
                     onRowClick ? "cursor-pointer hover:bg-blue-50/40" : "hover:bg-slate-50/80"
                   }`}
                 >
-                  {columns.map((col) => (
-                    <td
-                      key={col.key}
-                      className={`px-4 py-3 align-middle ${col.className || ""}`}
-                    >
-                      {col.render ? col.render(row[col.key], row) : (row[col.key] ?? "—")}
-                    </td>
-                  ))}
+                  {columns.map((col, cIdx) => {
+                    const colKey = col.key || col.accessorKey || col.id || `col-${cIdx}`;
+                    const cellVal = row[colKey];
+                    let renderedVal;
+                    if (col.render) {
+                      renderedVal = col.render(cellVal, row);
+                    } else if (col.cell) {
+                      renderedVal = typeof col.cell === "function"
+                        ? col.cell({ row: { original: row }, getValue: () => cellVal })
+                        : col.cell;
+                    } else {
+                      renderedVal = cellVal ?? "—";
+                    }
+
+                    return (
+                      <td
+                        key={colKey}
+                        className={`px-4 py-3 align-middle ${col.className || ""}`}
+                      >
+                        {renderedVal}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))
             )}

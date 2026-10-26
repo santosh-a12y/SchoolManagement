@@ -10,6 +10,7 @@ import {
 import appConfig from "../config/appConfig.js";
 import { generateReceiptNumber, parseBoolean } from "../lib/utils.js";
 import { calculateGrade } from "../lib/formatters.js";
+import { DEFAULT_USERS } from "../lib/permissions.js";
 
 const DATA_FILE_PATH = path.join(process.cwd(), "data", "school_database.json");
 
@@ -512,6 +513,7 @@ function getInitialDatabase() {
         timestamp: new Date().toISOString(),
       },
     ],
+    users: DEFAULT_USERS,
   };
 }
 
@@ -521,7 +523,32 @@ function getInitialDatabase() {
 async function readLocalDatabase() {
   try {
     const content = await fs.readFile(DATA_FILE_PATH, "utf-8");
-    return JSON.parse(content);
+    const parsed = JSON.parse(content);
+    if (!parsed.users || !Array.isArray(parsed.users) || parsed.users.length === 0) {
+      parsed.users = DEFAULT_USERS;
+      try {
+        await fs.writeFile(DATA_FILE_PATH, JSON.stringify(parsed, null, 2), "utf-8");
+      } catch {}
+    } else {
+      // Ensure passwords and usernames are assigned
+      let hasUpdates = false;
+      parsed.users = parsed.users.map((u) => {
+        const defaultMatch = DEFAULT_USERS.find((d) => d.id === u.id);
+        const username = u.username || defaultMatch?.username || u.email?.split("@")[0] || u.id;
+        const password = u.password || defaultMatch?.password || "staff123";
+        if (u.username !== username || u.password !== password) {
+          hasUpdates = true;
+          return { ...u, username, password };
+        }
+        return u;
+      });
+      if (hasUpdates) {
+        try {
+          await fs.writeFile(DATA_FILE_PATH, JSON.stringify(parsed, null, 2), "utf-8");
+        } catch {}
+      }
+    }
+    return parsed;
   } catch (err) {
     if (err.code === "ENOENT" || !err) {
       const initial = getInitialDatabase();
@@ -1830,6 +1857,143 @@ export const storageService = {
     db.settings = updated;
     await writeLocalDatabase(db);
     return updated;
+  },
+
+  // ----------------------------------------------------
+  // User & Permission Management Methods
+  // ----------------------------------------------------
+  async getUsers() {
+    const db = await readLocalDatabase();
+    if (!db.users || !Array.isArray(db.users) || db.users.length === 0) {
+      db.users = [...DEFAULT_USERS];
+      await writeLocalDatabase(db);
+    }
+    return db.users;
+  },
+
+  async getUserById(id) {
+    const users = await this.getUsers();
+    return users.find((u) => u.id === id) || null;
+  },
+
+  async createUser(userData) {
+    const db = await readLocalDatabase();
+    if (!db.users) db.users = [...DEFAULT_USERS];
+
+    const newUser = {
+      id: userData.id || `usr-${Date.now().toString(36)}`,
+      name: userData.name?.trim() || "Staff Member",
+      username: userData.username?.trim().toLowerCase() || userData.email?.split("@")[0] || `staff_${Date.now().toString(36)}`,
+      email: userData.email?.trim().toLowerCase() || "",
+      password: userData.password?.trim() || "staff123",
+      role: userData.role?.trim() || "Staff",
+      permissions: Array.isArray(userData.permissions) ? userData.permissions : [],
+      status: userData.status || "Active",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    db.users.push(newUser);
+    if (db.auditLog) {
+      db.auditLog.push({
+        id: `aud-${Date.now()}`,
+        action: "CREATE_USER",
+        entity: "User",
+        entityId: newUser.id,
+        details: `Created user ${newUser.name} with role ${newUser.role}`,
+        performedBy: "Staff",
+        timestamp: new Date().toISOString(),
+      });
+    }
+    await writeLocalDatabase(db);
+    return newUser;
+  },
+
+  async authenticateUser(identifier, password) {
+    if (!identifier || !password) return null;
+    const users = await this.getUsers();
+    const cleanId = String(identifier).trim().toLowerCase();
+    const cleanPass = String(password).trim();
+
+    const user = users.find(
+      (u) =>
+        (u.email && u.email.toLowerCase() === cleanId) ||
+        (u.username && u.username.toLowerCase() === cleanId) ||
+        (u.id && u.id.toLowerCase() === cleanId) ||
+        (u.id === "usr-admin" && (cleanId === "admin@oxfordacademy.edu.in" || cleanId === "principal@oxfordacademy.edu.in" || cleanId === "admin"))
+    );
+
+    if (!user) return null;
+    if (user.password && user.password !== cleanPass) {
+      return null;
+    }
+    return {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      permissions: user.permissions,
+      status: user.status,
+    };
+  },
+
+  async updateUser(id, userData) {
+    const db = await readLocalDatabase();
+    if (!db.users) db.users = [...DEFAULT_USERS];
+
+    const index = db.users.findIndex((u) => u.id === id);
+    if (index === -1) {
+      throw new Error(`User with ID ${id} not found`);
+    }
+
+    const updated = {
+      ...db.users[index],
+      ...userData,
+      updatedAt: new Date().toISOString(),
+    };
+
+    db.users[index] = updated;
+    if (db.auditLog) {
+      db.auditLog.push({
+        id: `aud-${Date.now()}`,
+        action: "UPDATE_USER",
+        entity: "User",
+        entityId: id,
+        details: `Updated user ${updated.name} (${updated.role})`,
+        performedBy: "Staff",
+        timestamp: new Date().toISOString(),
+      });
+    }
+    await writeLocalDatabase(db);
+    return updated;
+  },
+
+  async deleteUser(id) {
+    if (id === "usr-admin") {
+      throw new Error("Cannot delete primary Super Admin account");
+    }
+    const db = await readLocalDatabase();
+    if (!db.users) return false;
+
+    const initialLen = db.users.length;
+    db.users = db.users.filter((u) => u.id !== id);
+    if (db.users.length !== initialLen) {
+      if (db.auditLog) {
+        db.auditLog.push({
+          id: `aud-${Date.now()}`,
+          action: "DELETE_USER",
+          entity: "User",
+          entityId: id,
+          details: `Deleted user ${id}`,
+          performedBy: "Staff",
+          timestamp: new Date().toISOString(),
+        });
+      }
+      await writeLocalDatabase(db);
+      return true;
+    }
+    return false;
   },
 };
 

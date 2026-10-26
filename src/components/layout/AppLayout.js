@@ -1,15 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
+import { useAuth } from "@/context/AuthContext";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 /**
  * AppLayout Component
- * Wraps page content with responsive sidebar, top navigation bar, and main container.
+ * Wraps protected page content with authentication check, responsive sidebar, and header.
  */
 export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { currentUser, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !currentUser) {
+      router.replace("/login");
+    }
+  }, [isLoading, currentUser, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
+        <LoadingSpinner message="Verifying staff credentials & session..." />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return null; // Will redirect to /login via useEffect
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex">

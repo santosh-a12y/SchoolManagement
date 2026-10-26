@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
 import PageHeader from "@/components/layout/PageHeader";
 import Input from "@/components/ui/Input";
@@ -131,6 +132,13 @@ export default function SettingsPage() {
         title="School Settings & Cloud Sync"
         subtitle="Manage institution profile, printable document headers, and Google Sheets cloud integration"
         breadcrumbs={[{ label: "Settings" }]}
+        actions={
+          <Link href="/settings/users">
+            <Button variant="primary" size="sm" icon={ShieldCheck}>
+              Manage Users & Permissions
+            </Button>
+          </Link>
+        }
       />
 
       {/* Cloud Integration Status Card */}

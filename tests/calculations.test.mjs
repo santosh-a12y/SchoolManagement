@@ -281,4 +281,78 @@ test("parseBoolean correctly parses Google Sheets boolean strings ('FALSE', 'TRU
   assert.equal(filtered[1].marksObtained, 0);
 });
 
+test("RBAC & Permissions: hasPermission accurately evaluates wildcards, role presets and granular permissions", async () => {
+  const { hasPermission, hasAnyPermission, ROLE_PRESETS } = await import("../src/lib/permissions.js");
+
+  // 1. Super Admin has wildcard "*" -> has access to EVERYTHING
+  const adminPreset = ROLE_PRESETS.find((r) => r.id === "admin");
+  assert.ok(adminPreset, "Admin preset exists");
+  assert.equal(hasPermission(adminPreset.permissions, "students.view"), true);
+  assert.equal(hasPermission(adminPreset.permissions, "fees.view"), true);
+  assert.equal(hasPermission(adminPreset.permissions, "fees.collect"), true);
+  assert.equal(hasPermission(adminPreset.permissions, "system.settings"), true);
+
+  // 2. Accountant has fee permissions, but NO marksheets or system settings
+  const accountantPreset = ROLE_PRESETS.find((r) => r.id === "accountant");
+  assert.ok(accountantPreset, "Accountant preset exists");
+  assert.equal(hasPermission(accountantPreset.permissions, "fees.view"), true);
+  assert.equal(hasPermission(accountantPreset.permissions, "fees.collect"), true);
+  assert.equal(hasPermission(accountantPreset.permissions, "students.view"), true);
+  assert.equal(hasPermission(accountantPreset.permissions, "marks.manage"), false);
+  assert.equal(hasPermission(accountantPreset.permissions, "system.settings"), false);
+
+  // 3. Teacher has academics & marks, but NO fee financial reports
+  const teacherPreset = ROLE_PRESETS.find((r) => r.id === "teacher");
+  assert.ok(teacherPreset, "Teacher preset exists");
+  assert.equal(hasPermission(teacherPreset.permissions, "students.view"), true);
+  assert.equal(hasPermission(teacherPreset.permissions, "marks.manage"), true);
+  assert.equal(hasPermission(teacherPreset.permissions, "marksheets.view"), true);
+  assert.equal(hasPermission(teacherPreset.permissions, "fees.view"), false);
+  assert.equal(hasPermission(teacherPreset.permissions, "fees.collect"), false);
+
+  // 4. Prefix wildcard support
+  const prefixWildcard = ["students.*"];
+  assert.equal(hasPermission(prefixWildcard, "students.view"), true);
+  assert.equal(hasPermission(prefixWildcard, "students.manage"), true);
+  assert.equal(hasPermission(prefixWildcard, "fees.view"), false);
+
+  // 5. hasAnyPermission
+  assert.equal(hasAnyPermission(teacherPreset.permissions, ["fees.view", "marks.manage"]), true);
+  assert.equal(hasAnyPermission(teacherPreset.permissions, ["fees.view", "fees.collect"]), false);
+});
+
+test("User Management: storageService correctly loads, creates, updates, and deletes staff accounts", async () => {
+  const users = await storageService.getUsers();
+  assert.ok(Array.isArray(users), "getUsers returns array");
+  assert.ok(users.length >= 4, "Default 4 staff roles present");
+
+  // Create new custom staff user
+  const newStaff = await storageService.createUser({
+    name: "Vikram Malhotra",
+    email: "vikram@oxfordacademy.edu.in",
+    role: "Senior Lab Assistant",
+    permissions: ["students.view", "documents.cards"],
+    status: "Active",
+  });
+
+  assert.ok(newStaff.id, "New staff user has generated ID");
+  assert.equal(newStaff.name, "Vikram Malhotra");
+  assert.equal(newStaff.role, "Senior Lab Assistant");
+  assert.deepEqual(newStaff.permissions, ["students.view", "documents.cards"]);
+
+  // Update staff role & permissions
+  const updatedStaff = await storageService.updateUser(newStaff.id, {
+    role: "Chief Lab Officer",
+    permissions: ["students.view", "documents.cards", "academics.view"],
+  });
+  assert.equal(updatedStaff.role, "Chief Lab Officer");
+  assert.equal(updatedStaff.permissions.length, 3);
+
+  // Delete staff user
+  const deleted = await storageService.deleteUser(newStaff.id);
+  assert.equal(deleted, true);
+
+  const found = await storageService.getUserById(newStaff.id);
+  assert.equal(found, null);
+});
 

@@ -26,10 +26,13 @@ import {
 } from "lucide-react";
 import appConfig from "@/config/appConfig";
 import useSchoolSettings from "@/hooks/useSchoolSettings";
+import { useAuth } from "@/context/AuthContext";
+import { ShieldCheck } from "lucide-react";
 
 export default function AppSidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const { settings } = useSchoolSettings();
+  const { hasPermission } = useAuth();
   const [openSubmenus, setOpenSubmenus] = useState({
     students: true,
     academics: true,
@@ -57,54 +60,65 @@ export default function AppSidebar({ isOpen, onClose }) {
       title: "Student Management",
       key: "students",
       items: [
-        { label: "All Students", href: "/students", icon: Users },
-        { label: "New Admission", href: "/students/new", icon: UserPlus },
-        { label: "Search & Profile", href: "/students/search", icon: Search },
+        { label: "All Students", href: "/students", icon: Users, permission: "students.view" },
+        { label: "New Admission", href: "/students/new", icon: UserPlus, permission: "students.manage" },
+        { label: "Search & Profile", href: "/students/search", icon: Search, permission: "students.view" },
       ],
     },
     {
       title: "Academics & Exams",
       key: "academics",
       items: [
-        { label: "Academic Sessions", href: "/academics/sessions", icon: Calendar },
-        { label: "Classes & Sections", href: "/academics/classes", icon: School },
-        { label: "Examinations", href: "/academics/examinations", icon: Award },
-        { label: "Marksheets", href: "/marksheets", icon: GraduationCap },
+        { label: "Academic Sessions", href: "/academics/sessions", icon: Calendar, permission: "academics.view" },
+        { label: "Classes & Sections", href: "/academics/classes", icon: School, permission: "academics.view" },
+        { label: "Examinations", href: "/academics/examinations", icon: Award, permission: "academics.view" },
+        { label: "Marksheets", href: "/marksheets", icon: GraduationCap, permission: "marksheets.view" },
       ],
     },
     {
       title: "Student Cards & Passes",
       items: [
-        { label: "Student ID Cards", href: "/id-cards", icon: CreditCard },
-        { label: "Admit Cards", href: "/admit-cards", icon: FileCheck },
+        { label: "Student ID Cards", href: "/id-cards", icon: CreditCard, permission: "documents.cards" },
+        { label: "Admit Cards", href: "/admit-cards", icon: FileCheck, permission: "documents.cards" },
       ],
     },
     {
       title: "Fee Management",
       key: "fees",
       items: [
-        { label: "Fee Structures", href: "/fees", icon: BadgeDollarSign },
-        { label: "Record Payment", href: "/fees/payments", icon: Receipt },
-        { label: "Pending Fees", href: "/fees/pending", icon: AlertCircle },
-        { label: "Fee Receipts", href: "/fees/receipts", icon: FileText },
+        { label: "Fee Structures", href: "/fees", icon: BadgeDollarSign, permission: "fees.manage" },
+        { label: "Record Payment", href: "/fees/payments", icon: Receipt, permission: "fees.collect" },
+        { label: "Pending Fees", href: "/fees/pending", icon: AlertCircle, permission: "fees.view" },
+        { label: "Fee Receipts", href: "/fees/receipts", icon: FileText, permission: "fees.view" },
       ],
     },
     {
       title: "School Documents",
       key: "documents",
       items: [
-        { label: "Admission Form", href: "/documents/admission-form", icon: FileText },
-        { label: "Certificates", href: "/documents/certificates", icon: Award },
+        { label: "Admission Form", href: "/documents/admission-form", icon: FileText, permission: "documents.certificates" },
+        { label: "Certificates", href: "/documents/certificates", icon: Award, permission: "documents.certificates" },
       ],
     },
     {
       title: "System & Tools",
       items: [
-        { label: "Excel Import / Export", href: "/excel", icon: Upload },
-        { label: "Settings & Cloud Sync", href: "/settings", icon: Settings },
+        { label: "Users & Permissions", href: "/settings/users", icon: ShieldCheck, permission: "system.users" },
+        { label: "Excel Import / Export", href: "/excel", icon: Upload, permission: "system.excel" },
+        { label: "Settings & Cloud Sync", href: "/settings", icon: Settings, permission: "system.settings" },
       ],
     },
   ];
+
+  const permittedGroups = navGroups
+    .map((group) => {
+      const permittedItems = group.items.filter((item) => {
+        if (!item.permission) return true;
+        return hasPermission(item.permission);
+      });
+      return { ...group, items: permittedItems };
+    })
+    .filter((group) => group.items.length > 0);
 
   return (
     <>
@@ -153,7 +167,7 @@ export default function AppSidebar({ isOpen, onClose }) {
 
         {/* Scrollable Navigation Menu */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {navGroups.map((group, gIdx) => (
+          {permittedGroups.map((group, gIdx) => (
             <div key={group.title || gIdx}>
               <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 {group.title}
